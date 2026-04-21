@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>야광충 관측 확률 계산기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #020617;
+            color: #f8fafc;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .glow-text {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.8), 0 0 20px rgba(56, 189, 248, 0.5);
+        }
+        .glow-box {
+            box-shadow: 0 0 25px rgba(14, 165, 233, 0.15);
+            backdrop-filter: blur(10px);
+        }
+        .calendar-date {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            transition: all 0.3s ease;
+        }
+        .calendar-date:hover {
+            border-color: rgba(56, 189, 248, 0.6);
+            transform: translateY(-2px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #334155;
+            border-radius: 10px;
+        }
+        .relative-z {
+            position: relative;
+            z-index: 10;
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .badge-realtime {
+            animation: pulse-green 2s infinite;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 py-10 relative">
+
+    <canvas id="particleCanvas"></canvas>
+
+    <div class="max-w-md w-full bg-slate-900/80 rounded-2xl p-6 glow-box border border-slate-700 relative-z">
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-sky-600 rounded-full mix-blend-screen filter blur-[60px] opacity-20"></div>
+        <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-700 rounded-full mix-blend-screen filter blur-[60px] opacity-20"></div>
+
+        <div class="relative z-10">
+            <h1 class="text-2xl font-bold text-center mb-2 glow-text text-sky-400">🌊 야광충 관측 확률 계산기</h1>
+            <p class="text-sm text-slate-400 text-center mb-6">오늘 밤, 바다의 푸른 별을 만날 수 있을까요?</p>
+
+            <div class="flex space-x-2 mb-6 bg-slate-800/80 p-1 rounded-lg border border-slate-700">
+                <button onclick="switchTab('calculator')" id="tabCalc" class="w-1/2 py-2 text-sm font-medium rounded-md bg-sky-600 text-white transition-all shadow-lg">확률 계산</button>
+                <button onclick="switchTab('calendar')" id="tabCal" class="w-1/2 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-white transition-all">추천 관측일</button>
+            </div>
+
+            <div id="calculatorSection" class="space-y-4">
+                <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700 mb-4 flex flex-col gap-2 relative">
+                    <div id="dataStatusBadge" class="absolute -top-3 -right-2 hidden bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full badge-realtime shadow-lg">
+                        📡 실시간 KHOA 연동됨
+                    </div>
+
+                    <p class="text-xs text-slate-300">현재 날짜/시간 및 선택한 명소 기준으로 실시간 해양 데이터(수온/물때)를 불러옵니다.</p>
+                    <button type="button" onclick="autoFetchData()" id="autoFetchBtn" class="w-full flex justify-center items-center bg-indigo-600/90 hover:bg-indigo-500 text-white text-sm font-bold py-2.5 px-4 rounded-lg transition-colors border border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)]">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        실시간 해양 데이터 연동
+                    </button>
+                </div>
+
+                <form id="calculatorForm" class="space-y-3.5">
+                    <div>
+                        <label class="block text-sm font-medium text-sky-300 mb-1">📍 관측 포인트 (유명 명소)</label>
+                        <select id="location" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-sky-500 focus:border-sky-500 outline-none transition" onchange="handleLocationChange()">
+                            <option value="general">지역 무관 (일반 해안)</option>
+                            <optgroup label="경기 화성 (안산관측소 기준)">
+                                <option value="hwaseong_gungpyeong">궁평항</option>
+                            </optgroup>
+                            <optgroup label="충남 당진 (대산관측소 기준)">
+                                <option value="dangjin_janggo">장고항</option>
+                                <option value="dangjin_dobido">도비도항</option>
+                                <option value="dangjin_seokmun">석문방조제</option>
+                            </optgroup>
+                            <optgroup label="충남 서천 (보령관측소 기준)">
+                                <option value="seocheon_wolhaseong">월하성</option>
+                                <option value="seocheon_biin">비인해수욕장</option>
+                                <option value="seocheon_chunjangdae">춘장대해수욕장</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">📅 관측 날짜</label>
+                            <input type="date" id="targetDate" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-2.5 text-white outline-none transition" onchange="handleDateChange()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">🌕 달빛(월령)</label>
+                            <select id="moon" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-2.5 text-white outline-none">
+                                <option value="new">그믐달 (어두움)</option>
+                                <option value="half">반달</option>
+                                <option value="full">보름달 (밝음)</option>
+                            </select>
+                            <p class="text-[10px] text-sky-400 mt-1" id="moonHint">* 날짜 선택 시 자동 예측</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">☁️ 당일 밤 하늘 상태 (구름)</label>
+                        <select id="weather" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-sky-500 outline-none transition">
+                            <option value="clear">구름 없이 맑음 (달빛/별빛 그대로 비춤)</option>
+                            <option value="cloudy">구름 많음/흐림 (달빛을 가려줌 🌟)</option>
+                            <option value="rain">비/강풍 (관측 어려움)</option>
+                        </select>
+                        <p class="text-[11px] text-slate-400 mt-1">* 보름달이 떠도 구름이 많으면 시야가 어두워져 관측에 유리합니다.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">🌡️ 현재 수온 (<span id="tempValue" class="text-sky-400 font-bold">18</span>℃)</label>
+                        <input type="range" id="temp" min="5" max="30" value="18" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500">
+                        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <span>5℃</span>
+                            <span class="text-sky-500 font-bold">최적(20~26℃)</span>
+                            <span>30℃</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">🌊 물때</label>
+                            <select id="tide" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-2.5 text-white outline-none text-sm">
+                                <option value="rising">밀물~만조</option>
+                                <option value="falling">썰물~간조</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">🦠 낮에 적조?</label>
+                            <select id="redTide" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-2.5 text-white outline-none text-sm">
+                                <option value="no">아니요</option>
+                                <option value="yes">네!</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="calculate()" class="w-full mt-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all transform hover:scale-[1.02] shadow-[0_0_20px_rgba(2,132,199,0.4)]">
+                        결과 확인하기
+                    </button>
+                </form>
+
+                <div id="resultArea" class="hidden mt-6 text-center animate-fade-in bg-slate-800/80 p-5 rounded-xl border border-slate-700">
+                    <p class="text-sm text-slate-300 mb-1">선택하신 조건의 야광충 관측 확률은</p>
+                    <div class="text-6xl font-black text-sky-400 mb-2 glow-text tracking-tighter">
+                        <span id="percentage">0</span>%
+                    </div>
+                    <p id="resultMessage" class="text-base font-medium mt-3 leading-relaxed"></p>
+                    
+                    <button onclick="shareResult()" class="mt-4 inline-flex items-center text-sm bg-slate-700 hover:bg-slate-600 text-slate-200 py-1.5 px-4 rounded-full transition-colors border border-slate-600">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                        결과 복사하기
+                    </button>
+
+                    <div id="miniRecommendations" class="mt-5 pt-4 border-t border-slate-600 text-left hidden animate-fade-in">
+                        <p class="text-sm font-bold text-sky-300 mb-2">🗓️ 선택한 날짜 이후 최적의 관측일 예측</p>
+                        <div id="miniDatesList" class="space-y-2"></div>
+                        <button onclick="switchTab('calendar')" class="w-full mt-3 text-xs text-slate-400 hover:text-white py-1.5 bg-slate-700/30 rounded border border-slate-600/50 transition-colors">전체 달력에서 더 보기 +</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="calendarSection" class="hidden space-y-4">
+                <div class="text-center mb-4 mt-2">
+                    <h2 id="calendarTitle" class="text-lg font-bold text-sky-300">✨ 다가오는 야광충 관측 적기</h2>
+                    <p class="text-xs text-slate-400 mt-1">수온이 적절하고(20℃ 전후의 5~8월), 달빛이 가장 어두운 날짜를 예측합니다.</p>
+                </div>
+                
+                <div id="westCoastTip" class="hidden bg-sky-900/40 border border-sky-700 p-3 rounded-lg text-xs text-sky-200 mb-3 text-center leading-relaxed">
+                    💡 <span class="font-bold">서해안 명소 팁:</span> 조수 간만의 차가 크므로 반드시 <b>'만조(물이 꽉 찬 시간)'</b> 전후 1~2시간을 노려야 해변 가까이서 관측할 수 있습니다.
+                </div>
+
+                <div id="bestDatesContainer" class="space-y-3 max-h-[340px] overflow-y-auto pr-2 custom-scrollbar pb-4">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-sky-600 text-white px-4 py-2 rounded-lg shadow-lg transition-opacity duration-300 opacity-0 pointer-events-none relative-z z-50">
+        알림 메시지
+    </div>
+
+    <script>
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2.5 + 0.5;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.opacity = Math.random() * 0.5 + 0.1;
+                this.glow = Math.random() * 10 + 5;
+                this.pulseSpeed = Math.random() * 0.02 + 0.01;
+                this.pulseDirection = 1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.opacity += this.pulseSpeed * this.pulseDirection;
+                if (this.opacity >= 0.8 || this.opacity <= 0.1) {
+                    this.pulseDirection *= -1;
+                }
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(56, 189, 248, ${this.opacity})`;
+                ctx.shadowBlur = this.glow;
+                ctx.shadowColor = 'rgba(56, 189, 248, 0.8)';
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            const particleCount = Math.floor(window.innerWidth / 15);
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        initParticles();
+        animateParticles();
+
+
+        const KHOA_API_KEY = "6608ff9e920409e44a2cf0078f07bf40e74db6ad9b983b599b3eb434e7254002";
+        const OBS_MAP = {
+            'general': 'DT_0027', 
+            'hwaseong_gungpyeong': 'DT_0027', 
+            'dangjin_janggo': 'DT_0031', 
+            'dangjin_dobido': 'DT_0031',
+            'dangjin_seokmun': 'DT_0031',
+            'seocheon_wolhaseong': 'DT_0033', 
+            'seocheon_biin': 'DT_0033',
+            'seocheon_chunjangdae': 'DT_0033'
+        };
+
+        const tempSlider = document.getElementById('temp');
+        const tempValueDisplay = document.getElementById('tempValue');
+        tempSlider.addEventListener('input', (e) => {
+            tempValueDisplay.textContent = e.target.value;
+        });
+
+        function handleLocationChange() {
+            document.getElementById('dataStatusBadge').classList.add('hidden');
+            generateRecommendedDates();
+            autoFetchData(); // 지역 변경 시 실시간 데이터 자동 동기화
+        }
+
+        function switchTab(tab) {
+            const calcSection = document.getElementById('calculatorSection');
+            const calSection = document.getElementById('calendarSection');
+            const tabCalcBtn = document.getElementById('tabCalc');
+            const tabCalBtn = document.getElementById('tabCal');
+
+            if (tab === 'calculator') {
+                calcSection.classList.remove('hidden');
+                calSection.classList.add('hidden');
+                tabCalcBtn.classList.replace('bg-slate-800/80', 'bg-sky-600');
+                tabCalcBtn.classList.replace('text-slate-400', 'text-white');
+                tabCalcBtn.classList.add('shadow-lg');
+                tabCalBtn.classList.replace('bg-sky-600', 'transparent');
+                tabCalBtn.classList.replace('text-white', 'text-slate-400');
+                tabCalBtn.classList.remove('shadow-lg');
+            } else {
+                calcSection.classList.add('hidden');
+                calSection.classList.remove('hidden');
+                tabCalBtn.classList.replace('transparent', 'bg-sky-600');
+                tabCalBtn.classList.replace('text-slate-400', 'text-white');
+                tabCalBtn.classList.add('shadow-lg');
+                tabCalcBtn.classList.replace('bg-sky-600', 'transparent');
+                tabCalcBtn.classList.replace('text-white', 'text-slate-400');
+                tabCalcBtn.classList.remove('shadow-lg');
+                generateRecommendedDates(); 
+            }
+        }
+
+        function getLunarAge(date) {
+            const newMoon = new Date("2000-01-06T18:14:00Z");
+            const diffMs = date.getTime() - newMoon.getTime();
+            const lunarCycleMs = 29.53058867 * 24 * 60 * 60 * 1000;
+            let age = (diffMs % lunarCycleMs) / (24 * 60 * 60 * 1000);
+            if (age < 0) age += 29.53058867;
+            return age;
+        }
+
+        function estimateWaterTemp(month) {
+            const tempMap = { 1:9, 2:9, 3:11, 4:14, 5:17, 6:21, 7:24, 8:26, 9:24, 10:21, 11:17, 12:12 };
+            const variation = (Math.random() * 2 - 1).toFixed(1);
+            return parseFloat(tempMap[month] + parseFloat(variation));
+        }
+
+        function estimateTide() {
+            const hour = new Date().getHours();
+            return (hour % 6 < 3) ? 'rising' : 'falling'; 
+        }
+
+        async function autoFetchData() {
+            const btn = document.getElementById('autoFetchBtn');
+            if (btn.disabled) return; // 중복 호출 방지
+            
+            const originalText = `<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> 실시간 해양 데이터 연동`;
+            const badge = document.getElementById('dataStatusBadge');
+            
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 관측소 데이터 수신 중...`;
+            btn.disabled = true;
+            badge.classList.add('hidden');
+
+            const dateInputVal = document.getElementById('targetDate').value;
+            const now = dateInputVal ? new Date(dateInputVal) : new Date();
+            const m = now.getMonth() + 1;
+            const yyyy = now.getFullYear();
+            const mm = String(m).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${yyyy}${mm}${dd}`;
+
+            const locValue = document.getElementById('location').value;
+            const obsCode = OBS_MAP[locValue];
+
+            let apiSuccess = false;
+
+            try {
+                const recentUrl = `https://apis.data.go.kr/1192136/dtRecent/getDtRecent?ServiceKey=${KHOA_API_KEY}&obs_code=${obsCode}&ResultType=json`;
+                const tideUrl = `https://apis.data.go.kr/1192136/tideFcstHghLw/getTideFcstHghLw?ServiceKey=${KHOA_API_KEY}&obs_code=${obsCode}&date=${dateStr}&ResultType=json`;
+
+                const [recentRes, tideRes] = await Promise.all([
+                    fetch(recentUrl).catch(() => null),
+                    fetch(tideUrl).catch(() => null)
+                ]);
+
+                if (recentRes && tideRes && recentRes.ok && tideRes.ok) {
+                    const recentData = await recentRes.json();
+                    const tideData = await tideRes.json();
+                    
+                    if (recentData?.result?.data?.water_temp) {
+                        const realTemp = parseFloat(recentData.result.data.water_temp);
+                        document.getElementById('temp').value = Math.round(realTemp);
+                        document.getElementById('tempValue').textContent = Math.round(realTemp);
+                    } else {
+                        throw new Error("수온 데이터 없음");
+                    }
+
+                    if (tideData?.result?.data && Array.isArray(tideData.result.data)) {
+                        let nextTide = null;
+                        for (let t of tideData.result.data) {
+                            const tideTime = new Date(t.tph_time.replace(' ', 'T'));
+                            if (tideTime >= now) {
+                                nextTide = t;
+                                break;
+                            }
+                        }
+                        if (nextTide) {
+                            const isRising = (nextTide.hl_code === '고조' || nextTide.hl_code === 'H');
+                            document.getElementById('tide').value = isRising ? 'rising' : 'falling';
+                        }
+                    } else {
+                        throw new Error("조석 데이터 없음");
+                    }
+                    apiSuccess = true;
+                } else {
+                    throw new Error("API 통신 오류");
+                }
+            } catch (error) {
+                console.warn("API 호출 우회(보안 정책 등). 알고리즘 예측으로 대체:", error);
+                const estimatedTemp = estimateWaterTemp(m);
+                document.getElementById('temp').value = Math.round(estimatedTemp);
+                document.getElementById('tempValue').textContent = Math.round(estimatedTemp);
+                document.getElementById('tide').value = estimateTide();
+            }
+
+            const lunarAge = getLunarAge(now);
+            const moonSelect = document.getElementById('moon');
+            const moonHint = document.getElementById('moonHint');
+            
+            if (lunarAge < 3 || lunarAge > 26) {
+                moonSelect.value = "new";
+                moonHint.innerText = "🌑 그믐달 기간입니다.";
+                moonHint.className = "text-[10px] text-sky-400 mt-1";
+            } else if (lunarAge > 12 && lunarAge < 17) {
+                moonSelect.value = "full";
+                moonHint.innerText = "🌕 보름달 기간입니다.";
+                moonHint.className = "text-[10px] text-pink-400 mt-1";
+            } else {
+                moonSelect.value = "half";
+                moonHint.innerText = "🌗 반달 기간입니다.";
+                moonHint.className = "text-[10px] text-slate-400 mt-1";
+            }
+
+            document.getElementById('weather').value = "cloudy";
+
+            btn.innerHTML = apiSuccess ? `✅ 실시간 관측 데이터 연동 성공!` : `⚠️ 연결 지연 (추정 데이터로 연동됨)`;
+            if (apiSuccess) badge.classList.remove('hidden');
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                calculate(); 
+                if(!apiSuccess) showToast("API 보안 정책으로 인해 알고리즘 예측 데이터로 채워졌습니다.");
+            }, 1500);
+        }
+
+        function generateRecommendedDates() {
+            const container = document.getElementById('bestDatesContainer');
+            const locationSelect = document.getElementById('location');
+            const locName = locationSelect.selectedOptions[0].text;
+            const locValue = locationSelect.value;
+
+            const calendarTitle = document.getElementById('calendarTitle');
+            const westCoastTip = document.getElementById('westCoastTip');
+            
+            if (locValue === 'general') {
+                calendarTitle.innerText = `✨ 다가오는 야광충 관측 적기`;
+                westCoastTip.classList.add('hidden');
+            } else {
+                calendarTitle.innerText = `✨ [${locName}] 관측 적기`;
+                westCoastTip.classList.remove('hidden');
+            }
+
+            const dateInputVal = document.getElementById('targetDate').value;
+            const now = dateInputVal ? new Date(dateInputVal) : new Date();
+            let recommended = [];
+
+            for (let i = 1; i <= 100; i++) {
+                let checkDate = new Date(now);
+                checkDate.setDate(now.getDate() + i);
+                const month = checkDate.getMonth() + 1;
+                const lunarAge = getLunarAge(checkDate);
+
+                // 추천 조건을 5~8월(수온 20도 도달 시기)로 변경
+                if ((month >= 5 && month <= 8) && (lunarAge <= 3 || lunarAge >= 26.5)) {
+                    recommended.push(new Date(checkDate));
+                }
+            }
+
+            if (recommended.length === 0) {
+                container.innerHTML = `<div class="text-center p-6 text-slate-400 text-sm bg-slate-800/50 rounded-lg">가까운 시일 내에 수온과 달빛 조건이 맞는 최적 관측일(5~8월 그믐)이 없습니다.</div>`;
+                return;
+            }
+
+            let html = '';
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+
+            recommended.forEach(date => {
+                const m = date.getMonth() + 1;
+                const d = date.getDate();
+                const dayName = days[date.getDay()];
+                const isWeekend = (date.getDay() === 0 || date.getDay() === 6);
+
+                html += `
+                    <div class="calendar-date rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                            <div class="text-lg font-bold text-sky-300">
+                                ${m}월 ${d}일 <span class="text-xs font-normal ${isWeekend ? 'text-pink-400' : 'text-slate-400'}">(${dayName})</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">🌑 그믐달 | 🌡️ 수온 상승(20℃ 이상 예상)</div>
+                            ${locValue !== 'general' ? `<div class="text-xs text-indigo-300 mt-1.5 font-medium flex items-center"><svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>${locName} 만조 시간 꼭 확인!</div>` : ''}
+                        </div>
+                        <div class="text-2xl drop-shadow-[0_0_8px_rgba(56,189,248,0.8)]">✨</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        let lastCalculatedScore = 0;
+        let lastCalculatedLocation = "";
+
+        function calculate() {
+            let score = 0;
+            
+            const locSelect = document.getElementById('location');
+            const loc = locSelect.value;
+            lastCalculatedLocation = locSelect.selectedOptions[0].text;
+            
+            const dateInputVal = document.getElementById('targetDate').value;
+            const targetDate = dateInputVal ? new Date(dateInputVal) : new Date();
+            const month = targetDate.getMonth() + 1;
+
+            const temp = parseFloat(document.getElementById('temp').value);
+            const moon = document.getElementById('moon').value;
+            const weather = document.getElementById('weather').value;
+            const tide = document.getElementById('tide').value;
+            const redTide = document.getElementById('redTide').value;
+
+            // 1. 위치 점수 (최대 10)
+            if (loc !== 'general') score += 10;
+            
+            // 2. 월 점수 - 수온 20도 도달하는 5~8월에 가산점 (최대 15)
+            if (month >= 5 && month <= 8) score += 15;
+            else if (month === 4 || month === 9 || month === 10) score += 5;
+            else score += 0;
+
+            // 3. 수온 점수 (최대 25점) - 20~26도 최적 세팅, 15도 미만 0점
+            if (temp >= 20 && temp <= 26) score += 25; // 관측 대확률
+            else if (temp >= 15 && temp < 20) score += 10; // 생존 및 일부 관측
+            else if (temp > 26 && temp <= 28) score += 5; // 고온에 의한 사멸 시작
+            else score += 0; // 15도 미만(예: 13도)이면 활동 극감으로 점수 없음
+
+            // 4. 달빛 및 날씨 점수 (최대 30)
+            let moonScore = 0;
+            if (moon === 'new') moonScore = 30;
+            else if (moon === 'half') moonScore = 15;
+            else if (moon === 'full') moonScore = 0;
+
+            if (weather === 'rain') {
+                score -= 30; // 비오면 악천후
+            } else if (weather === 'cloudy' && (moon === 'full' || moon === 'half')) {
+                moonScore += 10; // 구름이 가려주면 점수 회복
+            }
+            score += moonScore;
+
+            // 5. 물때 점수 (최대 10)
+            if (tide === 'rising') score += 10;
+            else if (tide === 'falling') score += 0;
+
+            // 6. 적조 점수 (최대 10)
+            if (redTide === 'yes') score += 10;
+
+            // 총합이 100을 넘거나 0 미만이 되지 않게 보정
+            if (score > 100) score = 100;
+            if (score < 0) score = 0;
+
+            lastCalculatedScore = score;
+            animateValue("percentage", parseInt(document.getElementById('percentage').innerText), score, 800);
+            
+            const resultArea = document.getElementById('resultArea');
+            const resultMessage = document.getElementById('resultMessage');
+            
+            resultArea.classList.remove('hidden');
+
+            setTimeout(() => {
+                if (weather === 'rain') {
+                    resultMessage.innerHTML = "🌧️ 비나 강풍이 불면 관측이 매우 어렵고 위험합니다.";
+                    resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
+                } else if (temp < 15) {
+                    resultMessage.innerHTML = "🥶 수온이 너무 낮아 야광충이 번식하기 어렵습니다.<br><span class='text-sm font-normal'>수온이 20℃ 이상 올라가는 5월 이후를 노려보세요!</span>";
+                    resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
+                } else if (score >= 80) {
+                    resultMessage.innerHTML = "✨ 확률이 매우 높습니다!<br><span class='text-sm font-normal'>해변에서 발을 구르거나 돌을 던져 마찰을 일으켜보세요!</span>";
+                    resultMessage.className = "text-base font-medium text-sky-300 mt-3 leading-relaxed";
+                } else if (score >= 50) {
+                    resultMessage.innerHTML = "🌟 관측하기 꽤 좋은 조건입니다.<br><span class='text-sm font-normal'>주변에 가로등이 없는 최대한 어두운 해변을 찾아가 보세요.</span>";
+                    resultMessage.className = "text-base font-medium text-blue-300 mt-3 leading-relaxed";
+                } else if (score >= 30) {
+                    resultMessage.innerHTML = "운이 좋다면 희미하게 볼 수 있을지도 모릅니다.<br><span class='text-sm font-normal'>달빛이 가려진 방파제 밑 등을 찾아보세요.</span>";
+                    resultMessage.className = "text-base font-medium text-slate-300 mt-3 leading-relaxed";
+                } else {
+                    resultMessage.innerHTML = "선택하신 날짜엔 야광충을 만나기 어려울 것 같습니다.<br><span class='text-sm font-normal'>수온이 오르는 늦봄~여름철, 그믐달 시기에 다시 시도해 보세요.</span>";
+                    resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
+                }
+
+                updateMiniRecommendations(targetDate);
+            }, 800);
+        }
+
+        function animateValue(id, start, end, duration) {
+            if (start === end) return;
+            var range = end - start;
+            var current = start;
+            var increment = end > start ? 1 : -1;
+            var stepTime = Math.abs(Math.floor(duration / range));
+            var obj = document.getElementById(id);
+            if(obj.timer) clearInterval(obj.timer);
+            
+            obj.timer = setInterval(function() {
+                current += increment;
+                obj.innerHTML = current;
+                if (current == end) {
+                    clearInterval(obj.timer);
+                }
+            }, stepTime);
+        }
+
+        function shareResult() {
+            const locText = lastCalculatedLocation === "지역 무관 (일반 해안)" ? "바다" : lastCalculatedLocation;
+            let shareText = `🌊 오늘 밤 [${locText}] 야광충 관측 확률은 ✨${lastCalculatedScore}%✨ 입니다!\n\n관측 조건에 맞춰 아름다운 푸른 바다를 만나보세요.\n- 야광충 관측 확률 계산기 -`;
+            
+            const textArea = document.createElement("textarea");
+            textArea.value = shareText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast("클립보드에 복사되었습니다!");
+            } catch (err) {
+                console.error('복사 실패', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('targetDate');
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+            handleDateChange(); // 페이지 초기 로드 시 달빛 세팅 후 자동 데이터 연동 실행
+        });
+
+        function handleDateChange() {
+            const dateVal = document.getElementById('targetDate').value;
+            if(!dateVal) return;
+            const selectedDate = new Date(dateVal);
+            const lunarAge = getLunarAge(selectedDate);
+            const moonSelect = document.getElementById('moon');
+            const moonHint = document.getElementById('moonHint');
+            
+            if (lunarAge < 3 || lunarAge > 26) {
+                moonSelect.value = "new";
+                moonHint.innerText = "🌑 해당 일자는 그믐달 기간입니다.";
+                moonHint.className = "text-[10px] text-sky-400 mt-1";
+            } else if (lunarAge > 12 && lunarAge < 17) {
+                moonSelect.value = "full";
+                moonHint.innerText = "🌕 해당 일자는 보름달 기간입니다.";
+                moonHint.className = "text-[10px] text-pink-400 mt-1";
+            } else {
+                moonSelect.value = "half";
+                moonHint.innerText = "🌗 해당 일자는 반달 기간입니다.";
+                moonHint.className = "text-[10px] text-slate-400 mt-1";
+            }
+            generateRecommendedDates(); 
+            autoFetchData(); // 날짜 변경 시 해당 날짜의 물때 및 실시간 데이터 자동 동기화
+        }
+
+        function updateMiniRecommendations(baseDate) {
+            const container = document.getElementById('miniDatesList');
+            const wrapper = document.getElementById('miniRecommendations');
+            
+            let recommended = [];
+            for (let i = 1; i <= 100; i++) { 
+                let checkDate = new Date(baseDate);
+                checkDate.setDate(baseDate.getDate() + i);
+                const m = checkDate.getMonth() + 1;
+                const lunarAge = getLunarAge(checkDate);
+
+                // 추천 조건을 5~8월로 동일하게 적용
+                if ((m >= 5 && m <= 8) && (lunarAge <= 3 || lunarAge >= 26.5)) {
+                    recommended.push(new Date(checkDate));
+                }
+                if(recommended.length >= 2) break; 
+            }
+
+            if(recommended.length > 0) {
+                let html = '';
+                const days = ['일','월','화','수','목','금','토'];
+                recommended.forEach(date => {
+                    html += `<div class="bg-slate-700/50 p-2.5 rounded border border-slate-600 text-xs text-slate-200 flex justify-between items-center">
+                        <span class="font-medium">${date.getMonth()+1}월 ${date.getDate()}일 (${days[date.getDay()]})</span>
+                        <span class="text-sky-300 font-bold">그믐달🌑</span>
+                    </div>`;
+                });
+                container.innerHTML = html;
+                wrapper.classList.remove('hidden');
+            } else {
+                wrapper.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
