@@ -36,9 +36,22 @@
             border: 1px solid rgba(56, 189, 248, 0.2);
             transition: all 0.3s ease;
         }
-        .calendar-date:hover, .diary-card:hover {
+        /* 장기 예측 스타일 강화 */
+        .long-term-card {
+            background: rgba(30, 41, 59, 0.4) !important;
+            border: 1px dashed rgba(148, 163, 184, 0.5) !important;
+            opacity: 0.75;
+            filter: grayscale(0.4);
+        }
+        .short-term-card {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border: 1px solid rgba(56, 189, 248, 0.5) !important;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.15);
+        }
+        .calendar-date:hover {
             border-color: rgba(56, 189, 248, 0.6);
             transform: translateY(-2px);
+            opacity: 1;
         }
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
@@ -92,10 +105,15 @@
                         📡 KHOA/기상청 연동됨
                     </div>
 
-                    <p class="text-[11px] text-slate-300">날짜나 장소를 변경하면 수온, 물때, 날씨가 <b class="text-sky-300">100% 자동</b>으로 세팅됩니다.</p>
-                    <button type="button" onclick="autoFetchData()" id="autoFetchBtn" class="w-full flex justify-center items-center bg-indigo-600/90 hover:bg-indigo-500 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors border border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)]">
+                    <p class="text-[11px] text-slate-300">날짜나 장소를 변경하면 환경 데이터가 <b class="text-sky-300">자동</b>으로 세팅됩니다.</p>
+                    
+                    <button type="button" onclick="autoFetchData(false)" id="autoFetchBtn" class="w-full flex justify-center items-center bg-indigo-600/90 hover:bg-indigo-500 text-white text-sm font-bold py-2 px-4 rounded-lg transition-all border border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)]">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        실시간 환경 다시 불러오기
+                        실시간 환경 쾌속 불러오기
+                    </button>
+                    
+                    <button type="button" onclick="autoFetchData(true)" id="deepFetchBtn" class="w-full mt-1 flex justify-center items-center bg-slate-800 hover:bg-slate-700 text-slate-400 text-[11px] font-medium py-1.5 px-4 rounded-lg transition-all border border-slate-600 border-dashed">
+                        🔍 정확한 공공데이터 정밀 조회 (최대 20초 대기)
                     </button>
                 </div>
 
@@ -182,14 +200,16 @@
 
                     <div class="bg-indigo-900/40 border border-indigo-700/50 p-3.5 rounded-lg text-xs text-indigo-200 mt-2 mb-2 leading-relaxed shadow-inner">
                         ⏰ <span class="font-bold text-indigo-300">핵심 관측 가이드:</span> 밤 9시~새벽 2시 사이가 가장 어둡습니다.<br>
-                        <div class="mt-1.5 p-1.5 bg-indigo-950/50 rounded border border-indigo-800/50 flex items-center">
-                            <span class="text-xl mr-2">🌊</span> 
-                            <div>
-                                <span class="text-slate-300">오늘 밤 정확한 만조(고조) 시간:</span><br>
-                                <strong id="tideInfoText" class="text-sky-300 text-[15px]">계산 중...</strong>
+                        <div class="mt-1.5 p-2 bg-indigo-950/60 rounded border border-indigo-800/50 flex flex-col gap-1">
+                            <div class="flex items-center">
+                                <span class="text-lg mr-2">🌊</span> 
+                                <span class="text-slate-300 font-medium">오늘의 정확한 만조(고조) 시간:</span>
+                            </div>
+                            <div id="tideInfoText" class="text-sky-300 flex flex-col gap-0.5 ml-7">
+                                <strong class="text-sm">데이터를 불러오는 중...</strong>
                             </div>
                         </div>
-                        <p class="mt-1 text-[10px] text-indigo-300/80">* 이 시간 전후 1.5시간 동안 방파제/해변에 물이 가득 차 관측이 수월합니다.</p>
+                        <p class="mt-1.5 text-[10px] text-indigo-300/80 leading-snug">* 서해안은 조수 간만의 차가 커 만조 전후 1.5시간이 골든타임입니다.</p>
                     </div>
 
                     <button type="button" onclick="calculate()" class="w-full mt-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all transform hover:scale-[1.02] shadow-[0_0_20px_rgba(2,132,199,0.4)]">
@@ -232,6 +252,15 @@
                     💡 <span class="font-bold">서해안 명소 팁:</span> 조수 간만의 차가 크므로 반드시 <b>'밤 9시 ~ 새벽 2시 사이의 만조(물이 꽉 찬 시간)'</b> 전후 1~2시간을 노려야 해변 가까이서 선명하게 관측할 수 있습니다.
                 </div>
 
+                <!-- 범례 -->
+                <div class="flex justify-between items-center px-1 mb-2 bg-slate-800/40 p-2 rounded-lg border border-slate-700/50">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">예측 구분</span>
+                    <div class="flex gap-3 text-[10px] font-medium">
+                        <span class="flex items-center text-emerald-400"><span class="w-2.5 h-2.5 rounded bg-emerald-900/50 border border-emerald-500/50 mr-1.5"></span>정밀 예보</span>
+                        <span class="flex items-center text-slate-400"><span class="w-2.5 h-2.5 rounded border border-dashed border-slate-500 mr-1.5 bg-slate-800/60"></span>장기 예측</span>
+                    </div>
+                </div>
+
                 <div id="bestDatesContainer" class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar pb-4">
                 </div>
             </div>
@@ -259,7 +288,7 @@
 
     <script>
         /* -----------------------------------------------------------
-           [1] 파티클 애니메이션 (캔버스 배경)
+           [1] 파티클 애니메이션
         ----------------------------------------------------------- */
         const canvas = document.getElementById('particleCanvas');
         const ctx = canvas.getContext('2d');
@@ -274,6 +303,9 @@
 
         class Particle {
             constructor() {
+                this.reset();
+            }
+            reset() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
                 this.size = Math.random() * 2.5 + 0.5;
@@ -320,7 +352,7 @@
 
 
         /* -----------------------------------------------------------
-           [2] 주요 데이터 및 API 연동 로직
+           [2] 주요 데이터 및 API 로직
         ----------------------------------------------------------- */
         const KHOA_API_KEY = "6608ff9e920409e44a2cf0078f07bf40e74db6ad9b983b599b3eb434e7254002";
         
@@ -373,24 +405,25 @@
             return { val: "half", icon: "🌗", text: "반달 (보통)", age: age };
         }
 
-        // [알고리즘 1] 만조 시간 수학적 예측 (천문학 기반 Fallback)
-        function getEstimatedTideTime(targetDate) {
+        // [알고리즘 1] 만조 시간 수학적 예측 (Fallback용 - 두 개의 주기로 확장)
+        function getEstimatedTideTimes(targetDate) {
             const lunarData = getLunarData(targetDate);
-            // 서해안(인천/평택/보령 기준) 월령 0일 때 만조는 대략 16:30. 하루에 약 50분씩 지연
+            // 하루에 약 50분씩 지연되는 조석 주기 계산
             let baseHour = 16.5 + (lunarData.age * 0.8333);
-            
             while (baseHour >= 24) baseHour -= 24;
             
-            let nightHour = baseHour;
-            // 낮 시간대 만조라면 12.4시간(반일주조)을 더해 밤 만조로 변환
-            if (nightHour >= 6 && nightHour < 17) {
-                nightHour += 12.4;
-                if (nightHour >= 24) nightHour -= 24;
-            }
+            let tides = [];
+            // 두 번의 만조 (보통 12.4시간 간격)
+            tides.push(baseHour);
+            let secondTide = baseHour + 12.42;
+            if (secondTide >= 24) secondTide -= 24;
+            tides.push(secondTide);
             
-            const h = Math.floor(nightHour);
-            const m = Math.floor((nightHour - h) * 60);
-            return { h, m };
+            return tides.sort((a,b) => a - b).map(h => {
+                const hour = Math.floor(h);
+                const min = Math.floor((h - hour) * 60);
+                return { h: hour, m: min };
+            });
         }
 
         function estimateWaterTemp(month) {
@@ -413,7 +446,7 @@
             }
             
             generateRecommendedDates();
-            autoFetchData(); 
+            autoFetchData(false); 
         }
 
         function handleDateChange() {
@@ -427,48 +460,78 @@
             document.getElementById('moonHint').innerText = `* ${moonData.text}`;
             
             generateRecommendedDates(); 
-            autoFetchData(); 
+            autoFetchData(false); 
         }
 
-        // 🌐 안정성 극대화 다중 프록시 통신 모듈
-        async function fetchMarineData(khoaUrl) {
+        async function fetchWithTimeout(url, timeout = 3000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
             try {
-                // 1. 직접 통신 (CORS 허용 시)
-                const res1 = await fetch(khoaUrl);
-                if (res1.ok) {
-                    const data = await res1.json();
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(id);
+                return response;
+            } catch (error) {
+                clearTimeout(id);
+                throw error;
+            }
+        }
+
+        async function fetchMarineData(khoaUrl, isDeep = false) {
+            const tDirect = isDeep ? 15000 : 2500;
+            const tProxy = isDeep ? 20000 : 4000;
+
+            const fetchDirect = async () => {
+                const res = await fetchWithTimeout(khoaUrl, tDirect); 
+                if (res.ok) {
+                    const data = await res.json();
                     if (data && data.result) return data;
                 }
-            } catch(e) {}
+                throw new Error("Direct Failed");
+            };
 
-            try {
-                // 2. 가장 안정적인 프록시 AllOrigins 사용 (JSON 내용만 정확히 파싱)
-                const res2 = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(khoaUrl)}`);
-                if (res2.ok) {
-                    const data2 = await res2.json();
-                    if (data2.contents) {
-                        const parsed = JSON.parse(data2.contents);
+            const fetchProxy = async () => {
+                const res = await fetchWithTimeout(`https://api.allorigins.win/get?url=${encodeURIComponent(khoaUrl)}`, tProxy);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.contents) {
+                        const parsed = JSON.parse(data.contents);
                         if (parsed && parsed.result) return parsed;
                     }
                 }
-            } catch(e) {}
-            
-            return null; // 모든 통신 실패 시 Null 반환 (Fallback 알고리즘 작동 위함)
+                throw new Error("Proxy Failed");
+            };
+
+            try {
+                return await Promise.any([fetchDirect(), fetchProxy()]);
+            } catch (e) {
+                return null;
+            }
         }
 
-        // API 자동 호출 (수온 + 물때 + 날씨 + 고조시간 추출)
-        async function autoFetchData() {
+        async function autoFetchData(isDeep = false) {
             const btn = document.getElementById('autoFetchBtn');
-            if (btn.disabled) return; 
+            const deepBtn = document.getElementById('deepFetchBtn');
+            if (btn.disabled || deepBtn.disabled) return; 
             
-            const originalText = `<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> 실시간 환경 다시 불러오기`;
+            const originalBtnText = btn.innerHTML;
+            const originalDeepBtnText = deepBtn.innerHTML;
             const badge = document.getElementById('dataStatusBadge');
             const tideInfoText = document.getElementById('tideInfoText');
             
-            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 연동 중...`;
-            btn.disabled = true;
+            if (isDeep) {
+                deepBtn.innerHTML = `⏳ 정밀 수신 중... (최대 20초)`;
+                deepBtn.disabled = true;
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+            } else {
+                btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 쾌속 연동 중...`;
+                btn.disabled = true;
+                deepBtn.disabled = true;
+                deepBtn.classList.add('opacity-50');
+            }
+            
             badge.classList.add('hidden');
-            tideInfoText.innerText = "조석 데이터 검색 중...";
+            tideInfoText.innerHTML = `<strong class="text-xs text-slate-500 animate-pulse">${isDeep ? '공공데이터 정밀 탐색 중...' : '데이터 검색 중...'}</strong>`;
 
             const dateInputVal = document.getElementById('targetDate').value;
             const targetDate = dateInputVal ? new Date(dateInputVal) : new Date();
@@ -484,32 +547,35 @@
             let isKHOADataFound = false;
             let isWeatherFound = false;
 
-            // [1] 기상 API 통신
-            try {
-                const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${locObj.lat}&longitude=${locObj.lon}&hourly=cloudcover,precipitation&timezone=Asia%2FSeoul&start_date=${dateStrDash}&end_date=${dateStrDash}`;
-                const weatherRes = await fetch(weatherUrl);
-                if (weatherRes.ok) {
-                    const weatherData = await weatherRes.json();
-                    if (weatherData && weatherData.hourly && weatherData.hourly.precipitation) {
-                        const rain = weatherData.hourly.precipitation[21];
-                        const cloud = weatherData.hourly.cloudcover[21];
-                        
-                        if (rain > 0.5) document.getElementById('weather').value = 'rain';
-                        else if (cloud > 40) document.getElementById('weather').value = 'cloudy';
-                        else document.getElementById('weather').value = 'clear';
-                        isWeatherFound = true;
-                    }
-                }
-            } catch(e) {}
-
-            // [2] KHOA API 통신
+            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${locObj.lat}&longitude=${locObj.lon}&hourly=cloudcover,precipitation&timezone=Asia%2FSeoul&start_date=${dateStrDash}&end_date=${dateStrDash}`;
             const tideUrl_KHOA = `https://www.khoa.go.kr/api/oceangrid/tideObsPre/search.do?ServiceKey=${KHOA_API_KEY}&ObsCode=${locObj.obs}&Date=${dateStr}&ResultType=json`;
             const recentUrl_KHOA = `https://www.khoa.go.kr/api/oceangrid/tideObs/search.do?ServiceKey=${KHOA_API_KEY}&ObsCode=${locObj.obs}&Date=${dateStr}&ResultType=json`;
 
-            const recentData = await fetchMarineData(recentUrl_KHOA);
-            const tideData = await fetchMarineData(tideUrl_KHOA);
+            const fetchWeather = async () => {
+                try {
+                    const res = await fetchWithTimeout(weatherUrl, isDeep ? 10000 : 3000);
+                    if (res.ok) return await res.json();
+                } catch(e) {}
+                return null;
+            };
 
-            // --- 수온 파싱 ---
+            const [weatherData, recentData, tideData] = await Promise.all([
+                fetchWeather(),
+                fetchMarineData(recentUrl_KHOA, isDeep),
+                fetchMarineData(tideUrl_KHOA, isDeep)
+            ]);
+
+            // [1] 날씨 처리
+            if (weatherData && weatherData.hourly && weatherData.hourly.precipitation) {
+                const rain = weatherData.hourly.precipitation[21];
+                const cloud = weatherData.hourly.cloudcover[21];
+                if (rain > 0.5) document.getElementById('weather').value = 'rain';
+                else if (cloud > 40) document.getElementById('weather').value = 'cloudy';
+                else document.getElementById('weather').value = 'clear';
+                isWeatherFound = true;
+            }
+
+            // [2] 수온 처리
             let realTemp = null;
             if (recentData && recentData.result && recentData.result.data) {
                 const d = recentData.result.data;
@@ -521,7 +587,6 @@
                     realTemp = parseFloat(d.water_temp);
                 }
             }
-            
             if (realTemp !== null) {
                 document.getElementById('temp').value = Math.round(realTemp);
                 document.getElementById('tempValue').textContent = Math.round(realTemp);
@@ -532,55 +597,57 @@
                 document.getElementById('tempValue').textContent = Math.round(estimatedTemp);
             }
 
-            // --- 조석(물때) 파싱 ---
-            let isTideFound = false;
+            // [3] 조석(물때) 처리 - 다중 만조 지원
+            let tideHtml = '';
             if (tideData && tideData.result && tideData.result.data && Array.isArray(tideData.result.data)) {
                 const highTides = tideData.result.data.filter(t => t.hl_code === '고조' || t.hl_code === 'H');
-                
-                // 오후 4시 ~ 새벽 4시 사이의 만조 탐색
-                let nightTide = highTides.find(t => {
-                    const h = parseInt(t.tph_time.substring(11, 13));
-                    return h >= 16 || h <= 4; 
-                });
-                if (!nightTide && highTides.length > 0) nightTide = highTides[highTides.length - 1];
-
-                if (nightTide) {
-                    const tDate = new Date(nightTide.tph_time.replace(' ', 'T'));
-                    let h = tDate.getHours();
-                    const m = tDate.getMinutes();
-                    const ampm = h >= 12 ? '오후' : '오전';
-                    h = h % 12 || 12;
-                    tideInfoText.innerHTML = `${ampm} <span class="text-xl font-bold text-white">${h}시 ${m < 10 ? '0'+m : m}분</span>`;
+                if (highTides.length > 0) {
+                    highTides.forEach((t, i) => {
+                        const tDate = new Date(t.tph_time.replace(' ', 'T'));
+                        let h = tDate.getHours();
+                        const m = tDate.getMinutes();
+                        const ampm = h >= 12 ? '오후' : '오전';
+                        h = h % 12 || 12;
+                        const isMain = (tDate.getHours() >= 17 || tDate.getHours() <= 3); // 야간 만조 강조
+                        tideHtml += `<div class="${isMain ? 'text-white font-bold' : 'text-slate-400'}">${ampm} ${h}시 ${m < 10 ? '0'+m : m}분 ${isMain ? '✨' : ''}</div>`;
+                    });
                     document.getElementById('tide').value = 'rising'; 
-                    isTideFound = true;
                     isKHOADataFound = true;
                 }
             }
             
-            // 🌟 API 실패 시, 자체 예측 알고리즘 발동 (Fallback)
-            if (!isTideFound) {
-                const est = getEstimatedTideTime(targetDate);
-                const ampm = est.h >= 12 ? '오후' : '오전';
-                const displayH = est.h % 12 || 12;
-                tideInfoText.innerHTML = `${ampm} <span class="text-xl font-bold text-white">${displayH}시 ${est.m < 10 ? '0'+est.m : est.m}분</span> <span class="text-[10px] text-sky-400/80 ml-1">(알고리즘 예측치)</span>`;
+            if (tideHtml === '') {
+                const ests = getEstimatedTideTimes(targetDate);
+                ests.forEach((e, i) => {
+                    const ampm = e.h >= 12 ? '오후' : '오전';
+                    const displayH = e.h % 12 || 12;
+                    tideHtml += `<div class="text-slate-300 font-medium">${ampm} ${displayH}시 ${e.m < 10 ? '0'+e.m : e.m}분 <span class="text-[9px] text-sky-500/60 ml-1">(예측)</span></div>`;
+                });
                 document.getElementById('tide').value = 'rising';
             }
+            tideInfoText.innerHTML = tideHtml;
 
             // UI 갱신 마무리
-            btn.innerHTML = (isKHOADataFound || isWeatherFound) ? `✅ 실시간 관측 데이터 연동 완료!` : `⚠️ API 제한 (추정 알고리즘 작동중)`;
-            if (isKHOADataFound || isWeatherFound) badge.classList.remove('hidden');
+            if (isKHOADataFound || isWeatherFound) {
+                badge.classList.remove('hidden');
+                badge.innerHTML = '📡 KHOA/기상청 연동됨';
+                badge.classList.replace('bg-amber-500', 'bg-emerald-500');
+            } else {
+                badge.classList.remove('hidden');
+                badge.innerHTML = '⚡ 예측 알고리즘 모드';
+                badge.classList.replace('bg-emerald-500', 'bg-amber-500');
+            }
 
+            calculate(true); 
+            
             setTimeout(() => {
-                btn.innerHTML = originalText;
+                btn.innerHTML = originalBtnText;
                 btn.disabled = false;
-                calculate(true); 
-                
-                if(!isKHOADataFound && !isWeatherFound) {
-                    showToast("⚠️ 통신 지연으로 인해 자체 알고리즘 예측값으로 대체되었습니다.", "warning");
-                } else {
-                    showToast("✅ 기상/해양 데이터가 자동 세팅되었습니다!");
-                }
-            }, 1000);
+                btn.classList.remove('opacity-50');
+                deepBtn.innerHTML = originalDeepBtnText;
+                deepBtn.disabled = false;
+                deepBtn.classList.remove('opacity-50');
+            }, 800);
         }
 
         /* -----------------------------------------------------------
@@ -638,27 +705,16 @@
                     resultMessage.innerHTML = "🌧️ 비나 강풍이 불면 관측이 매우 어렵고 위험합니다.";
                     resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
                 } else if (temp < 15) {
-                    resultMessage.innerHTML = "🥶 수온이 너무 낮아 야광충이 번식하기 어렵습니다.<br><span class='text-sm font-normal'>수온이 20℃ 이상 올라가는 5~8월을 노려보세요!</span>";
-                    resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
+                    resultMessage.innerHTML = "🥶 수온이 너무 낮아 야광충이 번식하기 어렵습니다.<br><span class='text-sm font-normal text-slate-400'>20℃ 이상 올라가는 5~8월 시기가 최적입니다.</span>";
                 } else if (score >= 80) {
-                    resultMessage.innerHTML = "✨ 확률이 매우 높습니다!<br><span class='text-sm font-normal text-sky-200'>표시된 만조 시간에 맞춰 어두운 해변을 방문해 보세요!</span>";
-                    resultMessage.className = "text-base font-medium text-sky-300 mt-3 leading-relaxed";
+                    resultMessage.innerHTML = "✨ 확률이 매우 높습니다!<br><span class='text-sm font-normal text-sky-200'>표시된 만조 시간에 맞춰 어두운 해변을 방문하세요!</span>";
                 } else if (score >= 50) {
-                    resultMessage.innerHTML = "🌟 관측하기 꽤 좋은 조건입니다.<br><span class='text-sm font-normal text-blue-200'>가로등 불빛이 없는 최대한 어두운 곳을 찾아가세요.</span>";
-                    resultMessage.className = "text-base font-medium text-blue-300 mt-3 leading-relaxed";
-                } else if (score >= 30) {
-                    resultMessage.innerHTML = "희미하게 볼 수 있을지도 모릅니다.<br><span class='text-sm font-normal'>방파제 밑 그늘진 곳 등 빛 공해가 없는 곳이 유리합니다.</span>";
-                    resultMessage.className = "text-base font-medium text-slate-300 mt-3 leading-relaxed";
+                    resultMessage.innerHTML = "🌟 관측하기 꽤 좋은 조건입니다.<br><span class='text-sm font-normal text-blue-200'>가로등 불빛이 없는 최대한 어두운 곳이 좋습니다.</span>";
                 } else {
-                    resultMessage.innerHTML = "야광충을 만나기 어려울 것 같습니다.<br><span class='text-sm font-normal'>수온이 오르는 늦봄~여름철 그믐달 시기에 다시 시도하세요.</span>";
-                    resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
+                    resultMessage.innerHTML = "야광충을 만나기 어렵거나 흐릿할 수 있습니다.<br><span class='text-sm font-normal text-slate-400'>늦봄~여름철 그믐달 시기에 다시 시도하세요.</span>";
                 }
-
                 updateMiniRecommendations(targetDate);
-                
-                if (!isAuto) {
-                    resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
+                if (!isAuto) resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }, 800);
         }
 
@@ -702,28 +758,42 @@
             }
 
             if (recommended.length === 0) {
-                container.innerHTML = `<div class="text-center p-6 text-slate-400 text-sm bg-slate-800/50 rounded-lg">가까운 시일 내에 수온과 달빛 조건이 맞는 최적 관측일(5~8월 그믐)이 없습니다.</div>`;
+                container.innerHTML = `<div class="text-center p-6 text-slate-400 text-sm bg-slate-800/50 rounded-lg">조건이 맞는 최적 관측일이 없습니다.</div>`;
                 return;
             }
 
             let html = '';
             const days = ['일', '월', '화', '수', '목', '금', '토'];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
             recommended.forEach(item => {
                 const m = item.date.getMonth() + 1;
                 const d = item.date.getDate();
                 const dayName = days[item.date.getDay()];
                 const isWeekend = (item.date.getDay() === 0 || item.date.getDay() === 6);
+                
+                const diffTime = item.date.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const isLongTerm = diffDays > 7;
 
                 html += `
-                    <div class="calendar-date rounded-xl p-4 flex items-center justify-between">
-                        <div>
-                            <div class="text-lg font-bold text-sky-300">
-                                ${m}월 ${d}일 <span class="text-xs font-normal ${isWeekend ? 'text-pink-400' : 'text-slate-400'}">(${dayName})</span>
+                    <div class="calendar-date rounded-xl p-4 flex items-center justify-between ${isLongTerm ? 'long-term-card' : 'short-term-card'}">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="text-lg font-bold ${isLongTerm ? 'text-slate-300' : 'text-sky-300'}">
+                                    ${m}월 ${d}일 <span class="text-xs font-normal ${isWeekend ? 'text-pink-400' : 'text-slate-400'}">(${dayName})</span>
+                                </div>
+                                ${isLongTerm 
+                                    ? '<span class="bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded-full text-[9px] border border-slate-600 font-bold uppercase tracking-widest">장기 예측</span>' 
+                                    : '<span class="bg-emerald-900/60 text-emerald-400 px-2 py-0.5 rounded-full text-[9px] border border-emerald-500/50 font-bold uppercase tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.3)]">정밀 예보</span>'}
                             </div>
-                            <div class="text-[11px] text-slate-400 mt-1">${item.moon} 그믐달 | 🌡️ 수온 상승기</div>
+                            <div class="flex items-center text-[11px] ${isLongTerm ? 'text-slate-500' : 'text-slate-400'} mt-1">
+                                ${item.moon} 그믐달 <span class="mx-1.5">|</span> 🌡️ 수온 최적화 시기
+                            </div>
+                            ${isLongTerm ? '<div class="text-[9px] text-amber-500/80 mt-1">⚠️ 날씨/수온 변동성이 큰 날짜입니다.</div>' : '<div class="text-[9px] text-emerald-500/80 mt-1">✅ 신뢰도가 높은 정밀 예보 구간입니다.</div>'}
                         </div>
-                        <button onclick="setTargetDate('${item.date.getFullYear()}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}')" class="text-xs bg-sky-600/20 text-sky-300 px-3 py-1.5 rounded-full hover:bg-sky-500 hover:text-white transition">이 날짜로 확인</button>
+                        <button onclick="setTargetDate('${item.date.getFullYear()}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}')" class="ml-2 text-xs ${isLongTerm ? 'bg-slate-700 text-slate-300' : 'bg-sky-600/20 text-sky-300 hover:bg-sky-500 hover:text-white'} px-3 py-2 rounded-lg transition font-bold shrink-0">선택</button>
                     </div>
                 `;
             });
@@ -739,81 +809,64 @@
         function updateMiniRecommendations(baseDate) {
             const container = document.getElementById('miniDatesList');
             const wrapper = document.getElementById('miniRecommendations');
-            
             let count = 0;
             let html = '';
             const days = ['일','월','화','수','목','금','토'];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
             
             for (let i = 1; i <= 100; i++) { 
                 let checkDate = new Date(baseDate);
                 checkDate.setDate(baseDate.getDate() + i);
                 const m = checkDate.getMonth() + 1;
                 const moonData = getLunarData(checkDate);
-
                 if ((m >= 5 && m <= 8) && (moonData.val === 'new')) {
-                    html += `<div class="bg-slate-700/50 p-2.5 rounded border border-slate-600 text-xs text-slate-200 flex justify-between items-center cursor-pointer hover:bg-slate-600 transition" onclick="setTargetDate('${checkDate.getFullYear()}-${String(m).padStart(2,'0')}-${String(checkDate.getDate()).padStart(2,'0')}')">
-                        <span class="font-medium">${m}월 ${checkDate.getDate()}일 (${days[checkDate.getDay()]})</span>
-                        <span class="text-sky-300 font-bold">${moonData.icon} 그믐달</span>
+                    const diffTime = checkDate.getTime() - today.getTime();
+                    const isLongTerm = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) > 7;
+                    html += `<div class="bg-slate-700/50 p-2.5 rounded border ${isLongTerm ? 'border-slate-600 border-dashed opacity-80' : 'border-sky-700/60'} text-xs text-slate-200 flex justify-between items-center cursor-pointer hover:bg-slate-600 transition" onclick="setTargetDate('${checkDate.getFullYear()}-${String(m).padStart(2,'0')}-${String(checkDate.getDate()).padStart(2,'0')}')">
+                        <div class="flex items-center gap-2">
+                            <span class="font-medium">${m}/${checkDate.getDate()} (${days[checkDate.getDay()]})</span>
+                            <span class="text-[9px] ${isLongTerm ? 'text-slate-400' : 'text-emerald-400 font-bold'}">${isLongTerm ? '장기' : '정밀'}</span>
+                        </div>
+                        <span class="text-sky-300 font-bold">${moonData.icon}</span>
                     </div>`;
                     count++;
                 }
                 if(count >= 2) break; 
             }
-
-            if(count > 0) {
-                container.innerHTML = html;
-                wrapper.classList.remove('hidden');
-            } else {
-                wrapper.classList.add('hidden');
-            }
+            if(count > 0) { container.innerHTML = html; wrapper.classList.remove('hidden'); }
+            else wrapper.classList.add('hidden');
         }
 
-        /* -----------------------------------------------------------
-           [4] 관측 일지 (다이어리) 및 공유 기능
-        ----------------------------------------------------------- */
         function saveDiary() {
             const dateStr = document.getElementById('targetDate').value || new Date().toISOString().split('T')[0];
             const locName = lastCalculatedLocation === "지역 무관 (일반 해안)" ? "서해안 어느 바다" : lastCalculatedLocation;
             const score = lastCalculatedScore;
-            
-            const newRecord = {
-                id: Date.now(),
-                date: dateStr,
-                location: locName,
-                score: score,
-                timestamp: new Date().toLocaleString()
-            };
-
             let diary = JSON.parse(localStorage.getItem('seaSparkleDiary') || '[]');
-            // 중복 방지
             diary = diary.filter(r => !(r.date === dateStr && r.location === locName));
-            diary.unshift(newRecord);
+            diary.unshift({ id: Date.now(), date: dateStr, location: locName, score: score });
             localStorage.setItem('seaSparkleDiary', JSON.stringify(diary));
-
-            showToast("📝 일지에 기록이 안전하게 저장되었습니다!", "success");
+            showToast("📝 일지에 기록이 저장되었습니다!");
             renderDiary();
         }
 
         function renderDiary() {
             const container = document.getElementById('diaryContainer');
             const diary = JSON.parse(localStorage.getItem('seaSparkleDiary') || '[]');
-
             if (diary.length === 0) {
-                container.innerHTML = `<div class="text-center p-8 text-slate-500 text-sm bg-slate-800/30 rounded-lg border border-slate-700 border-dashed">아직 저장된 관측 일지가 없습니다.<br>계산 결과 창에서 '기록 저장하기'를 눌러보세요.</div>`;
+                container.innerHTML = `<div class="text-center p-8 text-slate-500 text-sm">저장된 일지가 없습니다.</div>`;
                 return;
             }
-
             let html = '';
             diary.forEach(record => {
-                let badgeColor = record.score >= 80 ? 'text-sky-300 bg-sky-900/40 border-sky-700' : (record.score >= 50 ? 'text-blue-300 bg-blue-900/40 border-blue-700' : 'text-slate-400 bg-slate-800 border-slate-600');
-                
+                let badgeColor = record.score >= 80 ? 'text-sky-300 bg-sky-900/40' : (record.score >= 50 ? 'text-blue-300 bg-blue-900/40' : 'text-slate-400 bg-slate-800');
                 html += `
                     <div class="diary-card rounded-xl p-4 relative">
-                        <button onclick="deleteDiary(${record.id})" class="absolute top-3 right-3 text-slate-500 hover:text-red-400 transition">✕</button>
-                        <div class="text-[10px] text-slate-400 mb-1">${record.date} 방문 예정/기록</div>
+                        <button onclick="deleteDiary(${record.id})" class="absolute top-3 right-3 text-slate-500">✕</button>
+                        <div class="text-[10px] text-slate-400">${record.date}</div>
                         <div class="text-lg font-bold text-white mb-2">${record.location}</div>
                         <div class="inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-bold ${badgeColor}">
-                            예측 확률: ${record.score}%
+                            확률: ${record.score}%
                         </div>
                     </div>
                 `;
@@ -829,47 +882,34 @@
         }
 
         function clearDiary() {
-            if(confirm("저장된 모든 일지를 삭제하시겠습니까?")) {
+            if(confirm("모든 일지를 삭제하시겠습니까?")) {
                 localStorage.removeItem('seaSparkleDiary');
                 renderDiary();
-                showToast("🗑️ 일지가 초기화되었습니다.", "success");
             }
         }
 
         function shareResult() {
             const locText = lastCalculatedLocation === "지역 무관 (일반 해안)" ? "서해안" : lastCalculatedLocation;
             const dateVal = document.getElementById('targetDate').value;
-            const tideTime = document.getElementById('tideInfoText').innerText.replace(/<[^>]*>?/gm, ''); // HTML 태그 제거
-            
-            let shareText = `🌊 [${dateVal}] 야광충 관측 가이드\n\n📍 장소: ${locText}\n✨ 관측 확률: ${lastCalculatedScore}%\n⏰ 추천 만조 시간: ${tideTime}\n\n어두운 밤, 바다의 푸른 별을 만나보세요!\n- 야광충 예측 Pro -`;
-            
+            const tideTime = document.getElementById('tideInfoText').innerText.replace(/\n/g, ' / ');
+            let shareText = `🌊 [${dateVal}] 야광충 관측 가이드\n📍 장소: ${locText}\n✨ 확률: ${lastCalculatedScore}%\n⏰ 만조시간: ${tideTime}\n- 야광충 예측 Pro -`;
             const textArea = document.createElement("textarea");
             textArea.value = shareText;
             document.body.appendChild(textArea);
             textArea.select();
-            try {
-                document.execCommand('copy');
-                showToast("🔗 결과가 클립보드에 복사되었습니다! 카톡으로 공유해보세요.", "success");
-            } catch (err) {
-                console.error('복사 실패', err);
-            }
+            try { document.execCommand('copy'); showToast("🔗 결과가 복사되었습니다!"); } 
+            catch (err) { console.error('복사 실패', err); }
             document.body.removeChild(textArea);
         }
 
         function showToast(msg, type="success") {
             const toast = document.getElementById('toast');
             document.getElementById('toastMsg').innerText = msg;
-            document.getElementById('toastIcon').innerText = type === "success" ? "✅" : "⚠️";
-            
             toast.style.opacity = '1';
             toast.style.transform = 'translate(-50%, -20px)';
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translate(-50%, 0)';
-            }, 3000);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translate(-50%, 0)'; }, 3000);
         }
 
-        // 초기화 실행
         document.addEventListener('DOMContentLoaded', () => {
             const dateInput = document.getElementById('targetDate');
             const today = new Date();
