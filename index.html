@@ -168,6 +168,11 @@
                         </div>
                     </div>
 
+                    <!-- 핵심 관측 시간대 안내 박스 추가 -->
+                    <div class="bg-indigo-900/40 border border-indigo-700/50 p-3 rounded-lg text-xs text-indigo-200 mt-2 mb-2 leading-relaxed">
+                        ⏰ <span class="font-bold text-indigo-300">핵심 관측 시간대:</span> 주변이 완전히 어두워지는 <b>밤 9시 ~ 새벽 2시</b> 사이가 빛이 가장 선명합니다. 가급적 이 시간대의 <b>'만조(고조)'</b> 시간을 노려보세요!
+                    </div>
+
                     <button type="button" onclick="calculate()" class="w-full mt-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all transform hover:scale-[1.02] shadow-[0_0_20px_rgba(2,132,199,0.4)]">
                         결과 확인하기
                     </button>
@@ -200,7 +205,7 @@
                 </div>
                 
                 <div id="westCoastTip" class="hidden bg-sky-900/40 border border-sky-700 p-3 rounded-lg text-xs text-sky-200 mb-3 text-center leading-relaxed">
-                    💡 <span class="font-bold">서해안 명소 팁:</span> 조수 간만의 차가 크므로 반드시 <b>'만조(물이 꽉 찬 시간)'</b> 전후 1~2시간을 노려야 해변 가까이서 관측할 수 있습니다.
+                    💡 <span class="font-bold">서해안 명소 팁:</span> 조수 간만의 차가 크므로 반드시 <b>'밤 9시 ~ 새벽 2시 사이의 만조(물이 꽉 찬 시간)'</b> 전후 1~2시간을 노려야 해변 가까이서 선명하게 관측할 수 있습니다.
                 </div>
 
                 <div id="bestDatesContainer" class="space-y-3 max-h-[340px] overflow-y-auto pr-2 custom-scrollbar pb-4">
@@ -312,7 +317,7 @@
 
             if (tab === 'calculator') {
                 calcSection.classList.remove('hidden');
-                calSection.classList.add('hidden');
+                calcSection.classList.add('hidden');
                 tabCalcBtn.classList.replace('bg-slate-800/80', 'bg-sky-600');
                 tabCalcBtn.classList.replace('text-slate-400', 'text-white');
                 tabCalcBtn.classList.add('shadow-lg');
@@ -594,13 +599,13 @@
                     resultMessage.innerHTML = "🥶 수온이 너무 낮아 야광충이 번식하기 어렵습니다.<br><span class='text-sm font-normal'>수온이 20℃ 이상 올라가는 5월 이후를 노려보세요!</span>";
                     resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
                 } else if (score >= 80) {
-                    resultMessage.innerHTML = "✨ 확률이 매우 높습니다!<br><span class='text-sm font-normal'>해변에서 발을 구르거나 돌을 던져 마찰을 일으켜보세요!</span>";
+                    resultMessage.innerHTML = "✨ 확률이 매우 높습니다!<br><span class='text-sm font-normal'>완전히 어두워진 <b>밤 9시 ~ 새벽 2시 사이</b> 해변에서 발을 구르거나 돌을 던져보세요!</span>";
                     resultMessage.className = "text-base font-medium text-sky-300 mt-3 leading-relaxed";
                 } else if (score >= 50) {
-                    resultMessage.innerHTML = "🌟 관측하기 꽤 좋은 조건입니다.<br><span class='text-sm font-normal'>주변에 가로등이 없는 최대한 어두운 해변을 찾아가 보세요.</span>";
+                    resultMessage.innerHTML = "🌟 관측하기 꽤 좋은 조건입니다.<br><span class='text-sm font-normal'><b>밤 9시 ~ 새벽 2시 사이</b> 가로등이 없는 최대한 어두운 해변을 찾아가 보세요.</span>";
                     resultMessage.className = "text-base font-medium text-blue-300 mt-3 leading-relaxed";
                 } else if (score >= 30) {
-                    resultMessage.innerHTML = "운이 좋다면 희미하게 볼 수 있을지도 모릅니다.<br><span class='text-sm font-normal'>달빛이 가려진 방파제 밑 등을 찾아보세요.</span>";
+                    resultMessage.innerHTML = "운이 좋다면 희미하게 볼 수 있을지도 모릅니다.<br><span class='text-sm font-normal'>달빛이 가려진 밤 9시 이후의 방파제 밑 등을 찾아보세요.</span>";
                     resultMessage.className = "text-base font-medium text-slate-300 mt-3 leading-relaxed";
                 } else {
                     resultMessage.innerHTML = "선택하신 날짜엔 야광충을 만나기 어려울 것 같습니다.<br><span class='text-sm font-normal'>수온이 오르는 늦봄~여름철, 그믐달 시기에 다시 시도해 보세요.</span>";
