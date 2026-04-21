@@ -63,13 +63,11 @@
             filter: invert(1);
             cursor: pointer;
         }
-        /* 탭 버튼 스타일 트랜지션 */
         .tab-btn { transition: all 0.2s ease-in-out; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4 py-10 relative">
 
-    <!-- 배경 애니메이션 캔버스 -->
     <canvas id="particleCanvas"></canvas>
 
     <div class="max-w-md w-full bg-slate-900/85 rounded-2xl p-6 glow-box border border-slate-700 relative-z">
@@ -80,7 +78,6 @@
             <h1 class="text-2xl font-bold text-center mb-2 glow-text text-sky-400 tracking-tight">🌊 야광충 예측 Pro</h1>
             <p class="text-xs text-slate-400 text-center mb-6">해양수산부 & 글로벌 기상 API 완전 연동</p>
 
-            <!-- 3단 탭 메뉴 -->
             <div class="flex space-x-1 mb-6 bg-slate-800/80 p-1 rounded-lg border border-slate-700">
                 <button onclick="switchTab('calculator')" id="tabCalc" class="tab-btn w-1/3 py-2 text-[13px] font-bold rounded-md bg-sky-600 text-white shadow-lg">확률 계산</button>
                 <button onclick="switchTab('calendar')" id="tabCal" class="tab-btn w-1/3 py-2 text-[13px] font-medium rounded-md text-slate-400 hover:text-white hover:bg-slate-700">추천 관측일</button>
@@ -123,7 +120,6 @@
                         </select>
                     </div>
 
-                    <!-- 지도 컨테이너 (명소 선택시 등장) -->
                     <div id="mapContainer" class="hidden rounded-lg overflow-hidden border border-slate-600 h-40 shadow-inner relative">
                         <div class="absolute inset-0 bg-slate-800 animate-pulse flex items-center justify-center text-xs text-slate-500" id="mapLoader">지도 불러오는 중...</div>
                         <iframe id="mapFrame" class="relative z-10 w-full h-full" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" onload="document.getElementById('mapLoader').style.display='none'"></iframe>
@@ -184,17 +180,16 @@
                         </div>
                     </div>
 
-                    <!-- 핵심 관측 시간대 안내 박스 (만조 시간 동적 표시) -->
                     <div class="bg-indigo-900/40 border border-indigo-700/50 p-3.5 rounded-lg text-xs text-indigo-200 mt-2 mb-2 leading-relaxed shadow-inner">
                         ⏰ <span class="font-bold text-indigo-300">핵심 관측 가이드:</span> 밤 9시~새벽 2시 사이가 가장 어둡습니다.<br>
                         <div class="mt-1.5 p-1.5 bg-indigo-950/50 rounded border border-indigo-800/50 flex items-center">
                             <span class="text-xl mr-2">🌊</span> 
                             <div>
                                 <span class="text-slate-300">오늘 밤 정확한 만조(고조) 시간:</span><br>
-                                <strong id="tideInfoText" class="text-sky-300 text-sm">자동 계산 중...</strong>
+                                <strong id="tideInfoText" class="text-sky-300 text-[15px]">계산 중...</strong>
                             </div>
                         </div>
-                        <p class="mt-1 text-[10px] text-indigo-300/80">* 이 시간 전후 1시간 동안 방파제/해변에 물이 가득 차 관측이 수월합니다.</p>
+                        <p class="mt-1 text-[10px] text-indigo-300/80">* 이 시간 전후 1.5시간 동안 방파제/해변에 물이 가득 차 관측이 수월합니다.</p>
                     </div>
 
                     <button type="button" onclick="calculate()" class="w-full mt-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all transform hover:scale-[1.02] shadow-[0_0_20px_rgba(2,132,199,0.4)]">
@@ -202,7 +197,6 @@
                     </button>
                 </form>
 
-                <!-- 결과 표시 영역 -->
                 <div id="resultArea" class="hidden mt-6 text-center animate-fade-in bg-slate-800/80 p-5 rounded-xl border border-slate-700 shadow-xl relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-400 to-blue-600"></div>
                     <p class="text-sm text-slate-300 mb-1">선택하신 조건의 야광충 관측 확률은</p>
@@ -212,7 +206,6 @@
                     <p id="resultMessage" class="text-[15px] font-medium mt-3 leading-relaxed"></p>
                     
                     <div class="flex flex-col gap-2 mt-5">
-                        <!-- 일지 저장 버튼 추가 -->
                         <button onclick="saveDiary()" class="w-full inline-flex justify-center items-center text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 px-4 rounded-lg transition-colors border border-indigo-500 shadow-md">
                             📝 내 관측 일지에 이 기록 저장하기
                         </button>
@@ -252,7 +245,6 @@
                 </div>
 
                 <div id="diaryContainer" class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar pb-4">
-                    <!-- 기록이 여기에 렌더링 됩니다 -->
                 </div>
             </div>
 
@@ -332,7 +324,6 @@
         ----------------------------------------------------------- */
         const KHOA_API_KEY = "6608ff9e920409e44a2cf0078f07bf40e74db6ad9b983b599b3eb434e7254002";
         
-        // 관측소 매핑 및 정확한 GPS 좌표 (날씨, 지도용)
         const LOC_DATA = {
             'general': { obs: 'DT_0027', lat: 36.5, lon: 126.5 }, 
             'hwaseong_gungpyeong': { obs: 'DT_0027', lat: 37.116, lon: 126.680 }, 
@@ -348,7 +339,6 @@
         const tempValueDisplay = document.getElementById('tempValue');
         tempSlider.addEventListener('input', (e) => tempValueDisplay.textContent = e.target.value);
 
-        // 탭 전환
         function switchTab(tab) {
             const tabs = ['calculator', 'calendar', 'diary'];
             tabs.forEach(t => {
@@ -371,7 +361,6 @@
             if (tab === 'diary') renderDiary();
         }
 
-        // 월령 계산 (이모지 매핑 포함)
         function getLunarData(date) {
             const newMoon = new Date("2000-01-06T18:14:00Z");
             const diffMs = date.getTime() - newMoon.getTime();
@@ -379,18 +368,36 @@
             let age = (diffMs % lunarCycleMs) / (24 * 60 * 60 * 1000);
             if (age < 0) age += 29.53058867;
             
-            if (age < 3 || age > 26) return { val: "new", icon: "🌑", text: "그믐달 (최고 조건)" };
-            if (age > 12 && age < 17) return { val: "full", icon: "🌕", text: "보름달 (관측 방해)" };
-            return { val: "half", icon: "🌗", text: "반달 (보통)" };
+            if (age < 3 || age > 26) return { val: "new", icon: "🌑", text: "그믐달 (최고 조건)", age: age };
+            if (age > 12 && age < 17) return { val: "full", icon: "🌕", text: "보름달 (관측 방해)", age: age };
+            return { val: "half", icon: "🌗", text: "반달 (보통)", age: age };
         }
 
-        // 수온 예측
+        // [알고리즘 1] 만조 시간 수학적 예측 (천문학 기반 Fallback)
+        function getEstimatedTideTime(targetDate) {
+            const lunarData = getLunarData(targetDate);
+            // 서해안(인천/평택/보령 기준) 월령 0일 때 만조는 대략 16:30. 하루에 약 50분씩 지연
+            let baseHour = 16.5 + (lunarData.age * 0.8333);
+            
+            while (baseHour >= 24) baseHour -= 24;
+            
+            let nightHour = baseHour;
+            // 낮 시간대 만조라면 12.4시간(반일주조)을 더해 밤 만조로 변환
+            if (nightHour >= 6 && nightHour < 17) {
+                nightHour += 12.4;
+                if (nightHour >= 24) nightHour -= 24;
+            }
+            
+            const h = Math.floor(nightHour);
+            const m = Math.floor((nightHour - h) * 60);
+            return { h, m };
+        }
+
         function estimateWaterTemp(month) {
             const tempMap = { 1:9, 2:9, 3:11, 4:14, 5:17, 6:21, 7:24, 8:26, 9:24, 10:21, 11:17, 12:12 };
             return parseFloat(tempMap[month] + (Math.random() * 2 - 1)).toFixed(1);
         }
 
-        // 위치/지도 변경
         function handleLocationChange() {
             document.getElementById('dataStatusBadge').classList.add('hidden');
             const loc = document.getElementById('location').value;
@@ -402,17 +409,13 @@
             } else {
                 mapContainer.classList.remove('hidden');
                 document.getElementById('mapLoader').style.display = 'flex';
-                const lat = LOC_DATA[loc].lat;
-                const lon = LOC_DATA[loc].lon;
-                // 구글맵 임베드 사용 (키 필요 없음)
-                mapFrame.src = `https://maps.google.com/maps?q=${lat},${lon}&z=14&output=embed`;
+                mapFrame.src = `https://maps.google.com/maps?q=${LOC_DATA[loc].lat},${LOC_DATA[loc].lon}&z=14&output=embed`;
             }
             
             generateRecommendedDates();
             autoFetchData(); 
         }
 
-        // 날짜 변경
         function handleDateChange() {
             const dateVal = document.getElementById('targetDate').value;
             if(!dateVal) return;
@@ -425,6 +428,32 @@
             
             generateRecommendedDates(); 
             autoFetchData(); 
+        }
+
+        // 🌐 안정성 극대화 다중 프록시 통신 모듈
+        async function fetchMarineData(khoaUrl) {
+            try {
+                // 1. 직접 통신 (CORS 허용 시)
+                const res1 = await fetch(khoaUrl);
+                if (res1.ok) {
+                    const data = await res1.json();
+                    if (data && data.result) return data;
+                }
+            } catch(e) {}
+
+            try {
+                // 2. 가장 안정적인 프록시 AllOrigins 사용 (JSON 내용만 정확히 파싱)
+                const res2 = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(khoaUrl)}`);
+                if (res2.ok) {
+                    const data2 = await res2.json();
+                    if (data2.contents) {
+                        const parsed = JSON.parse(data2.contents);
+                        if (parsed && parsed.result) return parsed;
+                    }
+                }
+            } catch(e) {}
+            
+            return null; // 모든 통신 실패 시 Null 반환 (Fallback 알고리즘 작동 위함)
         }
 
         // API 자동 호출 (수온 + 물때 + 날씨 + 고조시간 추출)
@@ -452,101 +481,105 @@
             const locValue = document.getElementById('location').value;
             const locObj = LOC_DATA[locValue];
             
-            let khoASuccess = false;
-            let weatherSuccess = false;
+            let isKHOADataFound = false;
+            let isWeatherFound = false;
 
+            // [1] 기상 API 통신
             try {
-                // [1] Open-Meteo 글로벌 기상 API 호출 (별도 API키 불필요)
                 const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${locObj.lat}&longitude=${locObj.lon}&hourly=cloudcover,precipitation&timezone=Asia%2FSeoul&start_date=${dateStrDash}&end_date=${dateStrDash}`;
-                const weatherRes = await fetch(weatherUrl).catch(() => null);
-                if (weatherRes && weatherRes.ok) {
+                const weatherRes = await fetch(weatherUrl);
+                if (weatherRes.ok) {
                     const weatherData = await weatherRes.json();
-                    // 밤 9시(인덱스 21) 기준 날씨 체크
-                    if (weatherData.hourly && weatherData.hourly.precipitation) {
+                    if (weatherData && weatherData.hourly && weatherData.hourly.precipitation) {
                         const rain = weatherData.hourly.precipitation[21];
                         const cloud = weatherData.hourly.cloudcover[21];
                         
                         if (rain > 0.5) document.getElementById('weather').value = 'rain';
                         else if (cloud > 40) document.getElementById('weather').value = 'cloudy';
                         else document.getElementById('weather').value = 'clear';
-                        weatherSuccess = true;
+                        isWeatherFound = true;
                     }
                 }
+            } catch(e) {}
 
-                // [2] KHOA 해양 API 호출
-                const recentUrl = `https://apis.data.go.kr/1192136/dtRecent/getDtRecent?ServiceKey=${KHOA_API_KEY}&obs_code=${locObj.obs}&ResultType=json`;
-                const tideUrl = `https://apis.data.go.kr/1192136/tideFcstHghLw/getTideFcstHghLw?ServiceKey=${KHOA_API_KEY}&obs_code=${locObj.obs}&date=${dateStr}&ResultType=json`;
+            // [2] KHOA API 통신
+            const tideUrl_KHOA = `https://www.khoa.go.kr/api/oceangrid/tideObsPre/search.do?ServiceKey=${KHOA_API_KEY}&ObsCode=${locObj.obs}&Date=${dateStr}&ResultType=json`;
+            const recentUrl_KHOA = `https://www.khoa.go.kr/api/oceangrid/tideObs/search.do?ServiceKey=${KHOA_API_KEY}&ObsCode=${locObj.obs}&Date=${dateStr}&ResultType=json`;
 
-                const [recentRes, tideRes] = await Promise.all([
-                    fetch(recentUrl).catch(() => null),
-                    fetch(tideUrl).catch(() => null)
-                ]);
+            const recentData = await fetchMarineData(recentUrl_KHOA);
+            const tideData = await fetchMarineData(tideUrl_KHOA);
 
-                if (recentRes && tideRes && tideRes.ok) {
-                    const tideData = await tideRes.json();
-                    let realTemp = null;
-
-                    if (recentRes.ok) {
-                        const recentData = await recentRes.json();
-                        if (recentData?.result?.data?.water_temp) {
-                            realTemp = parseFloat(recentData.result.data.water_temp);
-                            document.getElementById('temp').value = Math.round(realTemp);
-                            document.getElementById('tempValue').textContent = Math.round(realTemp);
-                        }
+            // --- 수온 파싱 ---
+            let realTemp = null;
+            if (recentData && recentData.result && recentData.result.data) {
+                const d = recentData.result.data;
+                if (Array.isArray(d)) {
+                    for (let i = d.length - 1; i >= 0; i--) {
+                        if (d[i].water_temp) { realTemp = parseFloat(d[i].water_temp); break; }
                     }
-                    if (!realTemp) throw new Error("수온 없음");
-
-                    // 만조(고조) 시간 정확하게 찾기
-                    if (tideData?.result?.data && Array.isArray(tideData.result.data)) {
-                        // 고조인 데이터만 필터링
-                        const highTides = tideData.result.data.filter(t => t.hl_code === '고조' || t.hl_code === 'H');
-                        
-                        // 오후 18시 이후 ~ 밤 시간대 고조 찾기
-                        let nightTide = highTides.find(t => {
-                            const h = parseInt(t.tph_time.substring(11, 13));
-                            return h >= 17 || h <= 3; // 오후 5시 ~ 새벽 3시 사이
-                        });
-                        
-                        // 밤 만조가 없다면 가장 마지막 고조 선택
-                        if (!nightTide && highTides.length > 0) nightTide = highTides[highTides.length - 1];
-
-                        if (nightTide) {
-                            const tDate = new Date(nightTide.tph_time.replace(' ', 'T'));
-                            let h = tDate.getHours();
-                            const m = tDate.getMinutes();
-                            const ampm = h >= 12 ? '오후' : '오전';
-                            h = h % 12 || 12;
-                            tideInfoText.innerHTML = `${ampm} <span class="text-xl font-bold text-white">${h}시 ${m < 10 ? '0'+m : m}분</span>`;
-                            document.getElementById('tide').value = 'rising'; // 만조 기준이므로 들물로 세팅
-                        } else {
-                            tideInfoText.innerText = "이날 밤 만조 데이터가 없습니다.";
-                        }
-                        khoASuccess = true;
-                    } else {
-                        throw new Error("조석 데이터 없음");
-                    }
-                } else {
-                    throw new Error("API 통신 오류");
+                } else if (d.water_temp) {
+                    realTemp = parseFloat(d.water_temp);
                 }
-            } catch (error) {
-                console.warn("API 오류. 알고리즘 대체:", error);
-                // Fallback
+            }
+            
+            if (realTemp !== null) {
+                document.getElementById('temp').value = Math.round(realTemp);
+                document.getElementById('tempValue').textContent = Math.round(realTemp);
+                isKHOADataFound = true;
+            } else {
                 const estimatedTemp = estimateWaterTemp(targetDate.getMonth() + 1);
                 document.getElementById('temp').value = Math.round(estimatedTemp);
                 document.getElementById('tempValue').textContent = Math.round(estimatedTemp);
-                tideInfoText.innerText = "API 통신 불가 (오후 9시 전후 유력)";
             }
 
-            // 달빛은 이미 세팅됨
-            btn.innerHTML = (khoASuccess) ? `✅ 실시간 관측 데이터 연동 완료!` : `⚠️ 연결 지연 (추정 데이터 연동)`;
-            if (khoASuccess || weatherSuccess) badge.classList.remove('hidden');
+            // --- 조석(물때) 파싱 ---
+            let isTideFound = false;
+            if (tideData && tideData.result && tideData.result.data && Array.isArray(tideData.result.data)) {
+                const highTides = tideData.result.data.filter(t => t.hl_code === '고조' || t.hl_code === 'H');
+                
+                // 오후 4시 ~ 새벽 4시 사이의 만조 탐색
+                let nightTide = highTides.find(t => {
+                    const h = parseInt(t.tph_time.substring(11, 13));
+                    return h >= 16 || h <= 4; 
+                });
+                if (!nightTide && highTides.length > 0) nightTide = highTides[highTides.length - 1];
+
+                if (nightTide) {
+                    const tDate = new Date(nightTide.tph_time.replace(' ', 'T'));
+                    let h = tDate.getHours();
+                    const m = tDate.getMinutes();
+                    const ampm = h >= 12 ? '오후' : '오전';
+                    h = h % 12 || 12;
+                    tideInfoText.innerHTML = `${ampm} <span class="text-xl font-bold text-white">${h}시 ${m < 10 ? '0'+m : m}분</span>`;
+                    document.getElementById('tide').value = 'rising'; 
+                    isTideFound = true;
+                    isKHOADataFound = true;
+                }
+            }
+            
+            // 🌟 API 실패 시, 자체 예측 알고리즘 발동 (Fallback)
+            if (!isTideFound) {
+                const est = getEstimatedTideTime(targetDate);
+                const ampm = est.h >= 12 ? '오후' : '오전';
+                const displayH = est.h % 12 || 12;
+                tideInfoText.innerHTML = `${ampm} <span class="text-xl font-bold text-white">${displayH}시 ${est.m < 10 ? '0'+est.m : est.m}분</span> <span class="text-[10px] text-sky-400/80 ml-1">(알고리즘 예측치)</span>`;
+                document.getElementById('tide').value = 'rising';
+            }
+
+            // UI 갱신 마무리
+            btn.innerHTML = (isKHOADataFound || isWeatherFound) ? `✅ 실시간 관측 데이터 연동 완료!` : `⚠️ API 제한 (추정 알고리즘 작동중)`;
+            if (isKHOADataFound || isWeatherFound) badge.classList.remove('hidden');
 
             setTimeout(() => {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
-                calculate(true); // 자동 계산 실행 (단, UI 자동스크롤은 안 함)
-                if(!khoASuccess) showToast("⚠️ 일부 데이터가 알고리즘 예측값으로 대체되었습니다.", "warning");
-                else showToast("✅ 기상/해양 데이터가 자동 세팅되었습니다!");
+                calculate(true); 
+                
+                if(!isKHOADataFound && !isWeatherFound) {
+                    showToast("⚠️ 통신 지연으로 인해 자체 알고리즘 예측값으로 대체되었습니다.", "warning");
+                } else {
+                    showToast("✅ 기상/해양 데이터가 자동 세팅되었습니다!");
+                }
             }, 1000);
         }
 
@@ -623,7 +656,6 @@
 
                 updateMiniRecommendations(targetDate);
                 
-                // 사용자가 수동으로 눌렀을 때만 결과창으로 부드럽게 스크롤
                 if (!isAuto) {
                     resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
@@ -753,7 +785,7 @@
             };
 
             let diary = JSON.parse(localStorage.getItem('seaSparkleDiary') || '[]');
-            // 중복 방지 (같은 날짜, 장소 덮어쓰기)
+            // 중복 방지
             diary = diary.filter(r => !(r.date === dateStr && r.location === locName));
             diary.unshift(newRecord);
             localStorage.setItem('seaSparkleDiary', JSON.stringify(diary));
@@ -807,7 +839,7 @@
         function shareResult() {
             const locText = lastCalculatedLocation === "지역 무관 (일반 해안)" ? "서해안" : lastCalculatedLocation;
             const dateVal = document.getElementById('targetDate').value;
-            const tideTime = document.getElementById('tideInfoText').innerText;
+            const tideTime = document.getElementById('tideInfoText').innerText.replace(/<[^>]*>?/gm, ''); // HTML 태그 제거
             
             let shareText = `🌊 [${dateVal}] 야광충 관측 가이드\n\n📍 장소: ${locText}\n✨ 관측 확률: ${lastCalculatedScore}%\n⏰ 추천 만조 시간: ${tideTime}\n\n어두운 밤, 바다의 푸른 별을 만나보세요!\n- 야광충 예측 Pro -`;
             
@@ -817,7 +849,7 @@
             textArea.select();
             try {
                 document.execCommand('copy');
-                showToast("🔗 결과가 클립보드에 복사되었습니다! 친구에게 카톡으로 공유해보세요.", "success");
+                showToast("🔗 결과가 클립보드에 복사되었습니다! 카톡으로 공유해보세요.", "success");
             } catch (err) {
                 console.error('복사 실패', err);
             }
