@@ -169,12 +169,24 @@
 
                     <div>
                         <label class="block text-[13px] font-medium text-slate-300 mb-1">🌡️ 예측 수온 (<span id="tempValue" class="text-sky-400 font-bold">18</span>℃)</label>
-                        <input type="range" id="temp" min="5" max="30" value="18" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500">
+                        <input type="range" id="temp" min="0" max="30" value="18" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500">
                         <div class="flex justify-between text-[10px] text-slate-500 mt-1">
-                            <span>5℃</span>
-                            <span class="text-sky-500 font-bold">활성 조건(20~26℃)</span>
-                            <span>30℃</span>
+                            <span>0℃</span>
+                            <span class="text-sky-500 font-bold">활발 15~22℃</span>
+                            <span>27℃↑ 급감</span>
                         </div>
+                        <p id="tempRuleHint" class="text-[10px] text-slate-400 mt-1">* 4℃ 이상 관찰 가능, 15~22℃ 활발, 27℃ 이상 고온 스트레스</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-[13px] font-medium text-slate-300 mb-1">🧂 예측 염분 (<span id="salinityValue" class="text-cyan-300 font-bold">28</span> psu)</label>
+                        <input type="range" id="salinity" min="0" max="35" value="28" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <span>0 psu</span>
+                            <span class="text-cyan-400 font-bold">12 psu 이하는 급감</span>
+                            <span>35 psu</span>
+                        </div>
+                        <p id="salinityRuleHint" class="text-[10px] text-slate-400 mt-1">* 강한 담수 유입·폭우 이후 저염분이면 확률을 크게 낮춥니다.</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -245,7 +257,7 @@
             <div id="calendarSection" class="hidden space-y-4">
                 <div class="text-center mb-4 mt-2">
                     <h2 id="calendarTitle" class="text-lg font-bold text-sky-300">✨ 다가오는 야광충 관측 적기</h2>
-                    <p class="text-[11px] text-slate-400 mt-1">수온이 적절하고(20℃ 전후의 5~8월), 달빛이 가장 어두운 날짜</p>
+                    <p class="text-[11px] text-slate-400 mt-1">수온 15~22℃ 활성 조건과 달빛이 가장 어두운 날짜</p>
                 </div>
                 
                 <div id="westCoastTip" class="hidden bg-sky-900/40 border border-sky-700 p-3 rounded-lg text-[11px] text-sky-200 mb-3 text-center leading-relaxed">
@@ -344,6 +356,12 @@
         const tempValueDisplay = document.getElementById('tempValue');
         tempSlider.addEventListener('input', (e) => tempValueDisplay.textContent = e.target.value);
 
+        const salinitySlider = document.getElementById('salinity');
+        const salinityValueDisplay = document.getElementById('salinityValue');
+        if (salinitySlider && salinityValueDisplay) {
+            salinitySlider.addEventListener('input', (e) => salinityValueDisplay.textContent = e.target.value);
+        }
+
         // 탭 전환 로직 수정: HTML ID와 JS 변수를 일치시켰습니다.
         function switchTab(tab) {
             const tabs = ['calculator', 'calendar', 'diary'];
@@ -396,9 +414,44 @@
             });
         }
 
-        function estimateWaterTemp(month) {
+        function estimateMonthlyWaterTemp(month) {
             const tempMap = { 1:9, 2:9, 3:11, 4:14, 5:17, 6:21, 7:24, 8:26, 9:24, 10:21, 11:17, 12:12 };
-            return parseFloat(tempMap[month] + (Math.random() * 2 - 1)).toFixed(1);
+            return tempMap[month] || 18;
+        }
+
+        function estimateWaterTemp(month) {
+            return parseFloat(estimateMonthlyWaterTemp(month) + (Math.random() * 2 - 1)).toFixed(1);
+        }
+
+        function getWaterTempProfile(temp) {
+            if (temp >= 27) {
+                return { key: 'lethal_hot', label: '27℃ 이상 고온 급감', bonus: -55, detail: '27℃ 이상은 고온 스트레스로 개체수가 급감하는 조건입니다.' };
+            }
+            if (temp >= 15 && temp <= 22) {
+                return { key: 'active', label: '15~22℃ 활발', bonus: 35, detail: '15~22℃는 야광충 활동이 활발한 최적권입니다.' };
+            }
+            if (temp >= 4 && temp < 15) {
+                return { key: 'possible_cold', label: '4~15℃ 미만 저밀도 가능', bonus: -20, detail: '4℃ 이상이라 관찰 가능성은 남지만 밀도는 낮게 봅니다.' };
+            }
+            if (temp > 22 && temp < 27) {
+                return { key: 'warm_stress', label: '22~27℃ 미만 상승 구간', bonus: 8, detail: '활발권을 넘은 따뜻한 수온입니다. 27℃에 가까울수록 보수적으로 봅니다.' };
+            }
+            return { key: 'too_cold', label: '4℃ 미만 관측 희박', bonus: -50, detail: '4℃ 미만은 관측 가능성을 매우 낮게 봅니다.' };
+        }
+
+        function getSalinityProfile(salinity) {
+            if (salinity <= 12) {
+                return { key: 'lethal_low', label: '12 psu 이하 저염분 급감', bonus: -45, detail: '염분 12 psu 이하는 개체수 급감 조건으로 강하게 감점합니다.' };
+            }
+            if (salinity <= 20) {
+                return { key: 'low', label: '저염분 주의', bonus: -12, detail: '저염분 구간입니다. 폭우·담수 유입 이후라면 보수적으로 판단합니다.' };
+            }
+            return { key: 'stable', label: '염분 안정권', bonus: 5, detail: '염분 조건은 큰 감점 없이 안정권으로 판단합니다.' };
+        }
+
+        function isEstimatedActiveMonth(month) {
+            const t = estimateMonthlyWaterTemp(month);
+            return t >= 15 && t <= 22;
         }
 
         function handleLocationChange() {
@@ -476,14 +529,37 @@
                 else document.getElementById('weather').value = 'clear';
                 isWeatherFound = true;
             }
+            const readNumericField = (row, keys) => {
+                if (!row) return null;
+                for (const key of keys) {
+                    if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
+                        const value = parseFloat(row[key]);
+                        if (!Number.isNaN(value)) return value;
+                    }
+                }
+                return null;
+            };
+            const readLatestNumeric = (data, keys) => {
+                if (Array.isArray(data)) {
+                    for (let i = data.length - 1; i >= 0; i--) {
+                        const value = readNumericField(data[i], keys);
+                        if (value !== null) return value;
+                    }
+                    return null;
+                }
+                return readNumericField(data, keys);
+            };
+
             let realTemp = null;
+            let realSalinity = null;
             if (recentData && recentData.result && recentData.result.data) {
                 const d = recentData.result.data;
-                if (Array.isArray(d)) { for (let i = d.length - 1; i >= 0; i--) { if (d[i].water_temp) { realTemp = parseFloat(d[i].water_temp); break; } } }
-                else if (d.water_temp) { realTemp = parseFloat(d.water_temp); }
+                realTemp = readLatestNumeric(d, ['water_temp', 'w_temp', 'temp', 'Temp', 'TEMP']);
+                realSalinity = readLatestNumeric(d, ['salinity', 'salt', 'Salt', 'SALINITY', 'salinity_psu', 'psu']);
             }
             if (realTemp !== null) { document.getElementById('temp').value = Math.round(realTemp); document.getElementById('tempValue').textContent = Math.round(realTemp); isKHOADataFound = true; }
             else { const estimatedTemp = estimateWaterTemp(targetDate.getMonth() + 1); document.getElementById('temp').value = Math.round(estimatedTemp); document.getElementById('tempValue').textContent = Math.round(estimatedTemp); }
+            if (realSalinity !== null) { document.getElementById('salinity').value = Math.round(realSalinity); document.getElementById('salinityValue').textContent = Math.round(realSalinity); isKHOADataFound = true; }
             let tideHtml = '';
             if (tideData && tideData.result && tideData.result.data && Array.isArray(tideData.result.data)) {
                 const highTides = tideData.result.data.filter(t => t.hl_code === '고조' || t.hl_code === 'H');
@@ -518,6 +594,9 @@
             const locSelect = document.getElementById('location');
             lastCalculatedLocation = locSelect.selectedOptions[0].text;
             const temp = parseFloat(document.getElementById('temp').value);
+            const salinity = parseFloat(document.getElementById('salinity').value || '28');
+            const tempProfile = getWaterTempProfile(temp);
+            const salinityProfile = getSalinityProfile(salinity);
             const moon = document.getElementById('moon').value;
             const weather = document.getElementById('weather').value;
             const tide = document.getElementById('tide').value;
@@ -527,7 +606,10 @@
             const month = targetDate.getMonth() + 1;
 
             if (locSelect.value !== 'general') score += 10;
-            if (month >= 5 && month <= 8) score += 15; else if (month === 4 || month === 9 || month === 10) score += 5;
+            const monthlyTemp = estimateMonthlyWaterTemp(month);
+            if (monthlyTemp >= 15 && monthlyTemp <= 22) score += 15;
+            else if (monthlyTemp >= 4 && monthlyTemp < 27) score += 5;
+            else score -= 10;
 
             let moonScore = 0;
             if (moon === 'new') moonScore = 30; else if (moon === 'half') moonScore = 15;
@@ -537,13 +619,8 @@
             if (tide === 'rising') score += 10;
             if (redTide === 'yes') score += 10;
 
-            let tempBonus = 0;
-            if (temp >= 20 && temp <= 26) { tempBonus = 35; } 
-            else if (temp >= 18 && temp < 20) { tempBonus = 5; score -= 10; } 
-            else if (temp < 18) { tempBonus = 0; score -= 45; } 
-            else if (temp > 26 && temp <= 28) { tempBonus = 10; } 
-            else { score -= 50; }
-            score += tempBonus;
+            score += tempProfile.bonus;
+            score += salinityProfile.bonus;
 
             if (score > 100) score = 100; if (score < 0) score = 0;
             lastCalculatedScore = score;
@@ -564,17 +641,25 @@
             resultArea.classList.remove('hidden');
 
             setTimeout(() => {
+                const envSummary = `<br><span class='text-xs font-normal text-slate-400'>수온: ${temp}℃ · ${tempProfile.label}<br>염분: ${salinity} psu · ${salinityProfile.label}</span>`;
                 if (weather === 'rain') {
-                    resultMessage.innerHTML = `🌧️ 비가 오거나 바람이 강하면 관측이 불가능에 가깝습니다.`;
+                    resultMessage.innerHTML = `🌧️ 비가 오거나 바람이 강하면 관측이 불가능에 가깝습니다.${envSummary}`;
                     resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
-                } else if (temp < 19) {
-                    resultMessage.innerHTML = `🥶 수온이 너무 낮습니다. (${temp}℃)<br><span class='text-sm font-normal text-slate-400'>야광충이 생존은 가능하나 빛을 내며 번식하기엔 차갑습니다. 20℃ 이상인 날을 기다려보세요.</span>`;
+                } else if (tempProfile.key === 'lethal_hot' || salinityProfile.key === 'lethal_low') {
+                    resultMessage.innerHTML = `⚠️ 개체수 급감 조건입니다.<br><span class='text-sm font-normal text-slate-400'>${tempProfile.key === 'lethal_hot' ? tempProfile.detail : salinityProfile.detail}</span>${envSummary}`;
+                    resultMessage.className = "text-base font-medium text-amber-300 mt-3 leading-relaxed";
+                } else if (tempProfile.key === 'too_cold') {
+                    resultMessage.innerHTML = `🥶 수온이 너무 낮습니다. (${temp}℃)<br><span class='text-sm font-normal text-slate-400'>4℃ 미만은 관측 가능성을 매우 낮게 봅니다.</span>${envSummary}`;
+                    resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
                 } else if (score >= 80) {
-                    resultMessage.innerHTML = `✨ 확률이 매우 높습니다!<br><span class='text-sm font-normal text-sky-200'>수온(${temp}℃)이 적절하고 모든 조건이 완벽합니다. 지금 당장 떠나세요!</span>`;
+                    resultMessage.innerHTML = `✨ 확률이 매우 높습니다!<br><span class='text-sm font-normal text-sky-200'>수온과 염분 조건이 좋고, 달빛·물때 조건도 우수합니다.</span>${envSummary}`;
+                    resultMessage.className = "text-base font-medium text-sky-300 mt-3 leading-relaxed";
                 } else if (score >= 55) {
-                    resultMessage.innerHTML = `🌟 관측하기 좋은 조건입니다.<br><span class='text-sm font-normal text-blue-200'>수온(${temp}℃)이 조금 아쉽지만 주변이 최대한 어두운 곳이라면 가능성이 충분합니다.</span>`;
+                    resultMessage.innerHTML = `🌟 관측하기 좋은 조건입니다.<br><span class='text-sm font-normal text-blue-200'>완벽한 피크는 아니어도 어두운 해변이라면 충분히 시도할 만합니다.</span>${envSummary}`;
+                    resultMessage.className = "text-base font-medium text-blue-300 mt-3 leading-relaxed";
                 } else {
-                    resultMessage.innerHTML = `야광충을 만나기 어려운 조건입니다.<br><span class='text-sm font-normal text-slate-400'>늦봄~여름철, 수온 20℃ 이상의 그믐달 시기가 최적입니다.</span>`;
+                    resultMessage.innerHTML = `야광충을 만나기 어려운 조건입니다.<br><span class='text-sm font-normal text-slate-400'>수온 15~22℃, 염분 12 psu 초과, 그믐달과 만조 전후를 우선하세요.</span>${envSummary}`;
+                    resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
                 }
                 updateMiniRecommendations(targetDate);
                 if (!isAuto) resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -606,7 +691,7 @@
             for (let i = 1; i <= 100; i++) {
                 let checkDate = new Date(now); checkDate.setDate(now.getDate() + i);
                 const month = checkDate.getMonth() + 1; const moonData = getLunarData(checkDate);
-                if ((month >= 5 && month <= 8) && (moonData.val === 'new')) { recommended.push({ date: new Date(checkDate), moon: moonData.icon }); }
+                if (isEstimatedActiveMonth(month) && (moonData.val === 'new')) { recommended.push({ date: new Date(checkDate), moon: moonData.icon, estTemp: estimateMonthlyWaterTemp(month) }); }
             }
             if (recommended.length === 0) { container.innerHTML = `<div class="text-center p-6 text-slate-400 text-sm bg-slate-800/50 rounded-lg">조건이 맞는 최적 관측일이 없습니다.</div>`; return; }
             let html = ''; const days = ['일', '월', '화', '수', '목', '금', '토'];
@@ -622,7 +707,7 @@
                             <div class="text-lg font-bold ${isLongTerm ? 'text-slate-300' : 'text-sky-300'}">${m}월 ${d}일 <span class="text-xs font-normal ${isWeekend ? 'text-pink-400' : 'text-slate-400'}">(${dayName})</span></div>
                             ${isLongTerm ? '<span class="bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded-full text-[9px] border border-slate-600 font-bold uppercase">장기</span>' : '<span class="bg-emerald-900/60 text-emerald-400 px-2 py-0.5 rounded-full text-[9px] border border-emerald-500/50 font-bold uppercase">정밀</span>'}
                         </div>
-                        <div class="flex items-center text-[11px] ${isLongTerm ? 'text-slate-500' : 'text-slate-400'} mt-1">${item.moon} 그믐달 | 🌡️ 수온 활성기</div>
+                        <div class="flex items-center text-[11px] ${isLongTerm ? 'text-slate-500' : 'text-slate-400'} mt-1">${item.moon} 그믐달 | 🌡️ 예상 ${item.estTemp}℃ 활성권</div>
                     </div>
                     <button onclick="setTargetDate('${item.date.getFullYear()}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}')" class="ml-2 text-xs ${isLongTerm ? 'bg-slate-700 text-slate-300' : 'bg-sky-600/20 text-sky-300 hover:bg-sky-500 hover:text-white'} px-3 py-2 rounded-lg transition font-bold shrink-0">선택</button>
                 </div>`;
@@ -638,11 +723,12 @@
             for (let i = 1; i <= 100; i++) { 
                 let checkDate = new Date(baseDate); checkDate.setDate(baseDate.getDate() + i);
                 const m = checkDate.getMonth() + 1; const moonData = getLunarData(checkDate);
-                if ((m >= 5 && m <= 8) && (moonData.val === 'new')) {
+                if (isEstimatedActiveMonth(m) && (moonData.val === 'new')) {
+                    const estTemp = estimateMonthlyWaterTemp(m);
                     const isLongTerm = Math.ceil((checkDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) > 7;
                     html += `<div class="bg-slate-700/50 p-2.5 rounded border ${isLongTerm ? 'border-slate-600 border-dashed opacity-80' : 'border-sky-700/60'} text-xs text-slate-200 flex justify-between items-center cursor-pointer hover:bg-slate-600 transition" onclick="setTargetDate('${checkDate.getFullYear()}-${String(m).padStart(2,'0')}-${String(checkDate.getDate()).padStart(2,'0')}')">
                         <div class="flex items-center gap-2"><span class="font-medium">${m}/${checkDate.getDate()} (${days[checkDate.getDay()]})</span><span class="text-[9px] ${isLongTerm ? 'text-slate-400' : 'text-emerald-400 font-bold'}">${isLongTerm ? '장기' : '정밀'}</span></div>
-                        <span class="text-sky-300 font-bold">${moonData.icon}</span>
+                        <span class="text-sky-300 font-bold">${moonData.icon} ${estTemp}℃</span>
                     </div>`;
                     count++;
                 }
@@ -653,10 +739,10 @@
 
         function saveDiary() {
             const dateStr = document.getElementById('targetDate').value || new Date().toISOString().split('T')[0];
-            const locName = lastCalculatedLocation === "지역 무관 (일반 해안)" ? "서해안 어느 바다" : lastCalculatedLocation;
+            const locName = lastCalculatedLocation === "지역 무관 (일반 서해안)" ? "서해안 어느 바다" : lastCalculatedLocation;
             let diary = JSON.parse(localStorage.getItem('seaSparkleDiary') || '[]');
             diary = diary.filter(r => !(r.date === dateStr && r.location === locName));
-            diary.unshift({ id: Date.now(), date: dateStr, location: locName, score: lastCalculatedScore });
+            diary.unshift({ id: Date.now(), date: dateStr, location: locName, score: lastCalculatedScore, temp: document.getElementById('temp').value, salinity: document.getElementById('salinity').value });
             localStorage.setItem('seaSparkleDiary', JSON.stringify(diary));
             showToast("📝 일지에 기록이 저장되었습니다!"); renderDiary();
         }
@@ -672,6 +758,7 @@
                     <div class="text-[10px] text-slate-400">${record.date}</div>
                     <div class="text-lg font-bold text-white mb-2">${record.location}</div>
                     <div class="inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-bold ${badgeColor}">확률: ${record.score}%</div>
+                    ${record.temp ? `<div class="text-[10px] text-slate-400 mt-2">수온 ${record.temp}℃ · 염분 ${record.salinity || '-'} psu</div>` : ''}
                 </div>`;
             });
             container.innerHTML = html;
@@ -685,10 +772,10 @@
         function clearDiary() { if(confirm("모든 일지를 삭제하시겠습니까?")) { localStorage.removeItem('seaSparkleDiary'); renderDiary(); } }
 
         function shareResult() {
-            const locText = lastCalculatedLocation === "지역 무관 (일반 해안)" ? "서해안" : lastCalculatedLocation;
+            const locText = lastCalculatedLocation === "지역 무관 (일반 서해안)" ? "서해안" : lastCalculatedLocation;
             const dateVal = document.getElementById('targetDate').value;
             const tideTime = document.getElementById('tideInfoText').innerText.replace(/\n/g, ' / ');
-            let shareText = `🌊 [${dateVal}] 야광충 관측 가이드\n📍 장소: ${locText}\n✨ 확률: ${lastCalculatedScore}%\n⏰ 만조시간: ${tideTime}\n- 야광충 예측 Pro -`;
+            let shareText = `🌊 [${dateVal}] 야광충 관측 가이드\n📍 장소: ${locText}\n✨ 확률: ${lastCalculatedScore}%\n🌡️ 수온: ${document.getElementById('temp').value}℃ / 🧂 염분: ${document.getElementById('salinity').value} psu\n⏰ 만조시간: ${tideTime}\n- 야광충 예측 Pro -`;
             const textArea = document.createElement("textarea"); textArea.value = shareText; document.body.appendChild(textArea); textArea.select();
             try { document.execCommand('copy'); showToast("🔗 결과가 복사되었습니다!"); } catch (err) { console.error('복사 실패', err); }
             document.body.removeChild(textArea);
