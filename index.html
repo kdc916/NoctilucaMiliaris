@@ -88,7 +88,7 @@
 
         <div class="relative z-10">
             <h1 class="text-2xl font-bold text-center mb-2 glow-text text-sky-400 tracking-tight">🌊 야광충 예측 Pro</h1>
-            <p class="text-xs text-slate-400 text-center mb-6">해양수산부 & 글로벌 기상 API 완전 연동</p>
+            <p class="text-xs text-slate-400 text-center mb-6">ROMS 수온 예측 + 기상 API 보수 분석</p>
 
             <!-- 탭 메뉴: ID를 JS 로직과 일치시켰습니다 -->
             <div class="flex space-x-1 mb-6 bg-slate-800/80 p-1 rounded-lg border border-slate-700">
@@ -101,7 +101,7 @@
             <div id="calculatorSection" class="space-y-4">
                 <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700 mb-4 flex flex-col gap-2 relative">
                     <div id="dataStatusBadge" class="absolute -top-3 -right-2 hidden bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full badge-realtime shadow-lg border border-emerald-400">
-                        📡 KHOA/기상청 연동됨
+                        📡 데이터 확인 중
                     </div>
                     <p class="text-[11px] text-slate-300">날짜나 장소를 변경하면 환경 데이터가 <b class="text-sky-300">자동</b>으로 세팅됩니다.</p>
                     <button type="button" onclick="autoFetchData(false)" id="autoFetchBtn" class="w-full flex justify-center items-center bg-indigo-600/90 hover:bg-indigo-500 text-white text-sm font-bold py-2 px-4 rounded-lg transition-all border border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)]">
@@ -163,45 +163,46 @@
                         <select id="weather" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-sky-500 outline-none transition text-sm">
                             <option value="clear">✨ 구름 없이 맑음</option>
                             <option value="cloudy">☁️ 구름 많음/흐림 (달빛 가려줌)</option>
-                            <option value="rain">🌧️ 비/강풍 (관측 매우 어려움)</option>
+                            <option value="rain">🌧️ 비/강수 있음 (관측 매우 어려움)</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-[13px] font-medium text-slate-300 mb-1">🌡️ 예측 수온 (<span id="tempValue" class="text-sky-400 font-bold">18</span>℃)</label>
-                        <input type="range" id="temp" min="0" max="30" value="18" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500">
-                        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
-                            <span>0℃</span>
-                            <span class="text-sky-500 font-bold">활발 15~22℃</span>
-                            <span>27℃↑ 급감</span>
-                        </div>
-                        <p id="tempRuleHint" class="text-[10px] text-slate-400 mt-1">* 4℃ 이상 관찰 가능, 15~22℃ 활발, 27℃ 이상 고온 스트레스</p>
+                        <label class="block text-[13px] font-medium text-slate-300 mb-1">💨 밤 바람/파도 조건</label>
+                        <select id="wind" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-sky-500 outline-none transition text-sm">
+                            <option value="calm">잔잔함 (풍속 12km/h 미만)</option>
+                            <option value="breezy">약간 출렁임 (12~20km/h)</option>
+                            <option value="windy">바람 강함 (20km/h 이상)</option>
+                        </select>
                     </div>
 
                     <div>
-                        <label class="block text-[13px] font-medium text-slate-300 mb-1">🧂 예측 염분 (<span id="salinityValue" class="text-cyan-300 font-bold">28</span> psu)</label>
-                        <input type="range" id="salinity" min="0" max="35" value="28" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                        <label class="block text-[13px] font-medium text-slate-300 mb-1">🌡️ 수온 (<span id="tempValue" class="text-sky-400 font-bold">18</span>℃)</label>
+                        <input type="range" id="temp" min="5" max="30" value="18" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500">
                         <div class="flex justify-between text-[10px] text-slate-500 mt-1">
-                            <span>0 psu</span>
-                            <span class="text-cyan-400 font-bold">12 psu 이하는 급감</span>
-                            <span>35 psu</span>
+                            <span>5℃</span>
+                            <span class="text-sky-500 font-bold">권장 조건(19~25℃)</span>
+                            <span>30℃</span>
                         </div>
-                        <p id="salinityRuleHint" class="text-[10px] text-slate-400 mt-1">* 강한 담수 유입·폭우 이후 저염분이면 확률을 크게 낮춥니다.</p>
+                        <p id="tempSourceText" class="text-[10px] text-slate-500 mt-1">* ROMS 예측 수온이 없으면 계절 추정값을 사용합니다.</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[13px] font-medium text-slate-300 mb-1">🌊 밤 시간대 물때</label>
                             <select id="tide" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-2.5 text-white outline-none text-[13px]">
-                                <option value="rising">밀물 ~ 만조 📈</option>
-                                <option value="falling">썰물 ~ 간조 📉</option>
+                                <option value="golden">만조 전후 1.5시간</option>
+                                <option value="rising">밀물/만조 근접</option>
+                                <option value="off">시간대 안 맞음</option>
+                                <option value="falling">썰물/간조</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[13px] font-medium text-slate-300 mb-1">🦠 낮에 적조 현상?</label>
+                            <label class="block text-[13px] font-medium text-slate-300 mb-1">🦠 낮 표층 징후</label>
                             <select id="redTide" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-2.5 text-white outline-none text-[13px]">
-                                <option value="no">아니요 / 모름</option>
-                                <option value="yes">네, 발생함! 🔴</option>
+                                <option value="unknown">모름</option>
+                                <option value="yes">붉은 띠/탁한 군집 보임</option>
+                                <option value="no">징후 없음</option>
                             </select>
                         </div>
                     </div>
@@ -217,7 +218,7 @@
                                 <strong class="text-sm">데이터를 불러오는 중...</strong>
                             </div>
                         </div>
-                        <p class="mt-1.5 text-[10px] text-indigo-300/80 leading-snug">* 서해안은 조수 간만의 차가 커 만조 전후 1.5시간이 골든타임입니다.</p>
+                        <p class="mt-1.5 text-[10px] text-indigo-300/80 leading-snug">* 서해안은 만조 전후 1.5시간, 잔잔한 수면, 낮 표층 징후가 함께 맞아야 확률을 높게 봅니다.</p>
                     </div>
 
                     <button type="button" onclick="calculate()" class="w-full mt-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all transform hover:scale-[1.02] shadow-[0_0_20px_rgba(2,132,199,0.4)]">
@@ -257,7 +258,7 @@
             <div id="calendarSection" class="hidden space-y-4">
                 <div class="text-center mb-4 mt-2">
                     <h2 id="calendarTitle" class="text-lg font-bold text-sky-300">✨ 다가오는 야광충 관측 적기</h2>
-                    <p class="text-[11px] text-slate-400 mt-1">수온 15~22℃ 활성 조건과 달빛이 가장 어두운 날짜</p>
+                    <p class="text-[11px] text-slate-400 mt-1">수온이 적절하고(20℃ 전후의 5~8월), 달빛이 가장 어두운 날짜</p>
                 </div>
                 
                 <div id="westCoastTip" class="hidden bg-sky-900/40 border border-sky-700 p-3 rounded-lg text-[11px] text-sky-200 mb-3 text-center leading-relaxed">
@@ -339,28 +340,49 @@
         initParticles(); animateParticles();
 
         const KHOA_API_KEY = "6608ff9e920409e44a2cf0078f07bf40e74db6ad9b983b599b3eb434e7254002";
+        const ROMS_API_KEY = "6608ff9e920409e44a2cf0078f07bf40e74db6ad9b983b599b3eb434e7254002";
+        const ROMS_API_URLS = [
+            "https://apis.data.go.kr/1192136/roms/GetRomsApiService",
+            "https://www.khoa.go.kr/oceandata/odmiapi/GetRomsApiService.do"
+        ];
+        const FISHING_API_KEY = "6608ff9e920409e44a2cf0078f07bf40e74db6ad9b983b599b3eb434e7254002";
+        const FISHING_API_URLS = [
+            "https://apis.data.go.kr/1192136/fcstFishingv2/GetFcstFishingApiServicev2",
+            "https://www.khoa.go.kr/oceandata/odmiapi/GetFcstFishingApiServicev2.do"
+        ];
         const LOC_DATA = {
-            'general': { obs: 'DT_0027', lat: 36.5, lon: 126.5 }, 
-            'hwaseong_gungpyeong': { obs: 'DT_0027', lat: 37.116, lon: 126.680 }, 
-            'dangjin_janggo': { obs: 'DT_0031', lat: 37.016, lon: 126.626 }, 
-            'dangjin_dobido': { obs: 'DT_0031', lat: 37.039, lon: 126.505 },
-            'dangjin_seokmun': { obs: 'DT_0031', lat: 37.030, lon: 126.610 },
-            'seocheon_wolhaseong': { obs: 'DT_0033', lat: 36.148, lon: 126.529 }, 
-            'seocheon_biin': { obs: 'DT_0033', lat: 36.140, lon: 126.520 },
-            'seocheon_chunjangdae': { obs: 'DT_0033', lat: 36.160, lon: 126.530 }
+            'general': { obs: 'DT_0027', lat: 36.5, lon: 126.5, fishingPlace: '' }, 
+            'hwaseong_gungpyeong': { obs: 'DT_0027', lat: 37.116, lon: 126.680, fishingPlace: '궁평' }, 
+            'dangjin_janggo': { obs: 'DT_0031', lat: 37.016, lon: 126.626, fishingPlace: '장고' }, 
+            'dangjin_dobido': { obs: 'DT_0031', lat: 37.039, lon: 126.505, fishingPlace: '도비도' },
+            'dangjin_seokmun': { obs: 'DT_0031', lat: 37.030, lon: 126.610, fishingPlace: '석문' },
+            'seocheon_wolhaseong': { obs: 'DT_0033', lat: 36.148, lon: 126.529, fishingPlace: '월하성' }, 
+            'seocheon_biin': { obs: 'DT_0033', lat: 36.140, lon: 126.520, fishingPlace: '비인' },
+            'seocheon_chunjangdae': { obs: 'DT_0033', lat: 36.160, lon: 126.530, fishingPlace: '춘장대' }
         };
 
         let isUsingRealtimeData = false;
+        let envDataStatus = {
+            weather: false,
+            tide: false,
+            waterTemp: false,
+            tempSource: 'estimated',
+            windKmh: null,
+            cloudCover: null,
+            rainMm: null,
+            tideSource: 'estimated',
+            roms: false,
+            currentSpeed: null,
+            fishing: false,
+            fishingPlace: '',
+            fishingTide: '',
+            fishingTideScore: null,
+            waveHeight: null
+        };
 
         const tempSlider = document.getElementById('temp');
         const tempValueDisplay = document.getElementById('tempValue');
         tempSlider.addEventListener('input', (e) => tempValueDisplay.textContent = e.target.value);
-
-        const salinitySlider = document.getElementById('salinity');
-        const salinityValueDisplay = document.getElementById('salinityValue');
-        if (salinitySlider && salinityValueDisplay) {
-            salinitySlider.addEventListener('input', (e) => salinityValueDisplay.textContent = e.target.value);
-        }
 
         // 탭 전환 로직 수정: HTML ID와 JS 변수를 일치시켰습니다.
         function switchTab(tab) {
@@ -414,44 +436,36 @@
             });
         }
 
-        function estimateMonthlyWaterTemp(month) {
-            const tempMap = { 1:9, 2:9, 3:11, 4:14, 5:17, 6:21, 7:24, 8:26, 9:24, 10:21, 11:17, 12:12 };
-            return tempMap[month] || 18;
-        }
-
         function estimateWaterTemp(month) {
-            return parseFloat(estimateMonthlyWaterTemp(month) + (Math.random() * 2 - 1)).toFixed(1);
+            const tempMap = { 1:8, 2:7, 3:9, 4:12, 5:15, 6:18, 7:22, 8:25, 9:23, 10:19, 11:14, 12:10 };
+            return tempMap[month];
         }
 
-        function getWaterTempProfile(temp) {
-            if (temp >= 27) {
-                return { key: 'lethal_hot', label: '27℃ 이상 고온 급감', bonus: -55, detail: '27℃ 이상은 고온 스트레스로 개체수가 급감하는 조건입니다.' };
+        function parseKhoaJson(text) {
+            try {
+                const data = JSON.parse(text);
+                return data && data.result ? data : null;
+            } catch (e) {
+                return null;
             }
-            if (temp >= 15 && temp <= 22) {
-                return { key: 'active', label: '15~22℃ 활발', bonus: 35, detail: '15~22℃는 야광충 활동이 활발한 최적권입니다.' };
-            }
-            if (temp >= 4 && temp < 15) {
-                return { key: 'possible_cold', label: '4~15℃ 미만 저밀도 가능', bonus: -20, detail: '4℃ 이상이라 관찰 가능성은 남지만 밀도는 낮게 봅니다.' };
-            }
-            if (temp > 22 && temp < 27) {
-                return { key: 'warm_stress', label: '22~27℃ 미만 상승 구간', bonus: 8, detail: '활발권을 넘은 따뜻한 수온입니다. 27℃에 가까울수록 보수적으로 봅니다.' };
-            }
-            return { key: 'too_cold', label: '4℃ 미만 관측 희박', bonus: -50, detail: '4℃ 미만은 관측 가능성을 매우 낮게 봅니다.' };
         }
 
-        function getSalinityProfile(salinity) {
-            if (salinity <= 12) {
-                return { key: 'lethal_low', label: '12 psu 이하 저염분 급감', bonus: -45, detail: '염분 12 psu 이하는 개체수 급감 조건으로 강하게 감점합니다.' };
-            }
-            if (salinity <= 20) {
-                return { key: 'low', label: '저염분 주의', bonus: -12, detail: '저염분 구간입니다. 폭우·담수 유입 이후라면 보수적으로 판단합니다.' };
-            }
-            return { key: 'stable', label: '염분 안정권', bonus: 5, detail: '염분 조건은 큰 감점 없이 안정권으로 판단합니다.' };
+        function getNightIndex(hourly, preferredHour = 21) {
+            if (!hourly || !Array.isArray(hourly.time)) return preferredHour;
+            const found = hourly.time.findIndex(t => t.endsWith(`T${String(preferredHour).padStart(2, '0')}:00`));
+            return found >= 0 ? found : Math.min(preferredHour, hourly.time.length - 1);
         }
 
-        function isEstimatedActiveMonth(month) {
-            const t = estimateMonthlyWaterTemp(month);
-            return t >= 15 && t <= 22;
+        function isGoldenHighTide(date) {
+            const h = date.getHours() + date.getMinutes() / 60;
+            const nightWindows = [21, 22, 23, 24, 25, 26];
+            return nightWindows.some(target => Math.abs((h < 3 ? h + 24 : h) - target) <= 1.5);
+        }
+
+        function classifyEstimatedTide(targetDate) {
+            const ests = getEstimatedTideTimes(targetDate);
+            const hasGolden = ests.some(e => isGoldenHighTide(new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), e.h, e.m)));
+            return hasGolden ? 'golden' : 'off';
         }
 
         function handleLocationChange() {
@@ -486,18 +500,169 @@
             const tDirect = isDeep ? 15000 : 2500; const tProxy = isDeep ? 20000 : 4000;
             const fetchDirect = async () => {
                 const res = await fetchWithTimeout(khoaUrl, tDirect); 
-                if (res.ok) { const data = await res.json(); if (data && data.result) return data; }
+                if (res.ok) {
+                    const text = await res.text();
+                    const data = parseKhoaJson(text);
+                    if (data && data.result && !data.result.error) return data;
+                }
                 throw new Error("Direct Failed");
             };
             const fetchProxy = async () => {
                 const res = await fetchWithTimeout(`https://api.allorigins.win/get?url=${encodeURIComponent(khoaUrl)}`, tProxy);
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.contents) { const parsed = JSON.parse(data.contents); if (parsed && parsed.result) return parsed; }
+                    if (data.contents) {
+                        const parsed = parseKhoaJson(data.contents);
+                        if (parsed && parsed.result && !parsed.result.error) return parsed;
+                    }
                 }
                 throw new Error("Proxy Failed");
             };
             try { return await Promise.any([fetchDirect(), fetchProxy()]); } catch (e) { return null; }
+        }
+
+        async function fetchOpenApiJson(url, isDeep = false) {
+            const tDirect = isDeep ? 15000 : 4000;
+            const tProxy = isDeep ? 20000 : 6000;
+            const fetchDirect = async () => {
+                const res = await fetchWithTimeout(url, tDirect);
+                if (res.ok) return await res.json();
+                throw new Error("Direct API failed");
+            };
+            const fetchProxy = async () => {
+                const res = await fetchWithTimeout(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, tProxy);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.contents) return JSON.parse(data.contents);
+                }
+                throw new Error("Proxy API failed");
+            };
+            try { return await Promise.any([fetchDirect(), fetchProxy()]); } catch (e) { return null; }
+        }
+
+        function getRomsItems(data) {
+            const body = data && data.response && data.response.body ? data.response.body : data && data.body;
+            const items = body && body.items;
+            if (!items) return [];
+            const raw = items.item || [];
+            return Array.isArray(raw) ? raw : [raw];
+        }
+
+        function getOpenApiItems(data) {
+            const body = data && data.response && data.response.body ? data.response.body : data && data.body;
+            const items = body && body.items;
+            if (!items) return [];
+            const raw = items.item || [];
+            return Array.isArray(raw) ? raw : [raw];
+        }
+
+        function pickBestRomsItem(items, locObj, targetDate) {
+            if (!items.length) return null;
+            const targetTime = new Date(targetDate);
+            targetTime.setHours(21, 0, 0, 0);
+            return items
+                .filter(item => item.wtem !== undefined && item.wtem !== null && !Number.isNaN(parseFloat(item.wtem)))
+                .map(item => {
+                    const lat = parseFloat(item.lat);
+                    const lon = parseFloat(item.lot);
+                    const temp = parseFloat(item.wtem);
+                    const current = item.crsp !== undefined ? parseFloat(item.crsp) : null;
+                    const predTime = item.predcDt ? new Date(String(item.predcDt).replace(' ', 'T')) : null;
+                    const distanceScore = Number.isFinite(lat) && Number.isFinite(lon)
+                        ? Math.hypot(lat - locObj.lat, lon - locObj.lon) * 100
+                        : 999;
+                    const timeScore = predTime && !Number.isNaN(predTime.getTime())
+                        ? Math.abs(predTime.getTime() - targetTime.getTime()) / (1000 * 60 * 60)
+                        : 999;
+                    return { item, temp, current, predTime, rank: distanceScore + timeScore * 0.04 };
+                })
+                .sort((a, b) => a.rank - b.rank)[0] || null;
+        }
+
+        async function fetchRomsData(locObj, targetDate, isDeep = false) {
+            if (!ROMS_API_KEY || ROMS_API_KEY.includes("여기에")) return null;
+            const box = 0.035;
+            const params = new URLSearchParams({
+                serviceKey: ROMS_API_KEY,
+                type: "json",
+                ymin: (locObj.lat - box).toFixed(5),
+                ymax: (locObj.lat + box).toFixed(5),
+                xmin: (locObj.lon - box).toFixed(5),
+                xmax: (locObj.lon + box).toFixed(5),
+                pageNo: "1",
+                numOfRows: "300",
+                include: "predcDt,lat,lot,wtem,crsp,crdir"
+            });
+            for (const baseUrl of ROMS_API_URLS) {
+                const data = await fetchOpenApiJson(`${baseUrl}?${params.toString()}`, isDeep);
+                const header = data && data.response && data.response.header ? data.response.header : data && data.header;
+                const resultCode = header && header.resultCode;
+                if (resultCode && resultCode !== "00" && resultCode !== "200") continue;
+                const best = pickBestRomsItem(getRomsItems(data), locObj, targetDate);
+                if (best) return best;
+            }
+            return null;
+        }
+
+        function pickBestFishingItem(items, locObj, targetDate) {
+            if (!items.length) return null;
+            const dateKey = `${targetDate.getFullYear()}${String(targetDate.getMonth() + 1).padStart(2, '0')}${String(targetDate.getDate()).padStart(2, '0')}`;
+            const targetHour = 21;
+            const normalizedPlace = (locObj.fishingPlace || '').replace(/\s/g, '');
+            return items
+                .filter(item => item.tdlvHrCn || item.tdlvHrScr !== undefined)
+                .map(item => {
+                    const lat = parseFloat(item.lat);
+                    const lon = parseFloat(item.lot);
+                    const itemDate = String(item.predcYmd || '').replace(/[^0-9]/g, '');
+                    const place = String(item.seafsPstnNm || '');
+                    const noonText = String(item.predcNoonSeCd || '');
+                    const noonPenalty = /오후|PM|2/.test(noonText) ? 0 : 4;
+                    const datePenalty = itemDate && itemDate !== dateKey ? 12 : 0;
+                    const placePenalty = normalizedPlace && place.replace(/\s/g, '').includes(normalizedPlace) ? -8 : 0;
+                    const distanceScore = Number.isFinite(lat) && Number.isFinite(lon)
+                        ? Math.hypot(lat - locObj.lat, lon - locObj.lon) * 100
+                        : 40;
+                    return { item, rank: distanceScore + noonPenalty + datePenalty + placePenalty + Math.abs(targetHour - 21) };
+                })
+                .sort((a, b) => a.rank - b.rank)[0] || null;
+        }
+
+        function classifyFishingTide(score) {
+            if (!Number.isFinite(score)) return null;
+            if (score >= 70) return 'golden';
+            if (score >= 45) return 'rising';
+            return 'off';
+        }
+
+        async function fetchFishingData(locObj, targetDate, isDeep = false) {
+            if (!FISHING_API_KEY || FISHING_API_KEY.includes("여기에")) return null;
+            const reqDate = `${targetDate.getFullYear()}${String(targetDate.getMonth() + 1).padStart(2, '0')}${String(targetDate.getDate()).padStart(2, '0')}`;
+            const buildUrl = (baseUrl, placeName = '') => {
+                const params = new URLSearchParams({
+                    serviceKey: FISHING_API_KEY,
+                    type: "json",
+                    reqDate,
+                    gubun: "갯바위",
+                    pageNo: "1",
+                    numOfRows: "300",
+                    include: "seafsPstnNm,lat,lot,predcYmd,predcNoonSeCd,tdlvHrCn,tdlvHrScr,minWvhgt,maxWvhgt,minWtem,maxWtem,minCrsp,maxCrsp,minWspd,maxWspd,totalIndex,lastScr"
+                });
+                if (placeName) params.set('placeName', placeName);
+                return `${baseUrl}?${params.toString()}`;
+            };
+            for (const baseUrl of FISHING_API_URLS) {
+                const urls = locObj.fishingPlace ? [buildUrl(baseUrl, locObj.fishingPlace), buildUrl(baseUrl)] : [buildUrl(baseUrl)];
+                for (const url of urls) {
+                    const data = await fetchOpenApiJson(url, isDeep);
+                    const header = data && data.response && data.response.header ? data.response.header : data && data.header;
+                    const resultCode = header && header.resultCode;
+                    if (resultCode && resultCode !== "00" && resultCode !== "200") continue;
+                    const best = pickBestFishingItem(getOpenApiItems(data), locObj, targetDate);
+                    if (best) return best.item;
+                }
+            }
+            return null;
         }
 
         async function autoFetchData(isDeep = false) {
@@ -514,115 +679,265 @@
             const yyyy = targetDate.getFullYear(); const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
             const dd = String(targetDate.getDate()).padStart(2, '0'); const dateStr = `${yyyy}${mm}${dd}`; const dateStrDash = `${yyyy}-${mm}-${dd}`;
             const locValue = document.getElementById('location').value; const locObj = LOC_DATA[locValue];
+            envDataStatus = {
+                weather: false,
+                tide: false,
+                waterTemp: false,
+                tempSource: 'estimated',
+                windKmh: null,
+                cloudCover: null,
+                rainMm: null,
+                tideSource: 'estimated',
+                roms: false,
+                currentSpeed: null,
+                fishing: false,
+                fishingPlace: '',
+                fishingTide: '',
+                fishingTideScore: null,
+                waveHeight: null
+            };
             let isKHOADataFound = false; let isWeatherFound = false;
-            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${locObj.lat}&longitude=${locObj.lon}&hourly=cloudcover,precipitation&timezone=Asia%2FSeoul&start_date=${dateStrDash}&end_date=${dateStrDash}`;
-            const tideUrl_KHOA = `https://www.khoa.go.kr/api/oceangrid/tideObsPre/search.do?ServiceKey=${KHOA_API_KEY}&ObsCode=${locObj.obs}&Date=${dateStr}&ResultType=json`;
-            const recentUrl_KHOA = `https://www.khoa.go.kr/api/oceangrid/tideObs/search.do?ServiceKey=${KHOA_API_KEY}&ObsCode=${locObj.obs}&Date=${dateStr}&ResultType=json`;
+            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${locObj.lat}&longitude=${locObj.lon}&hourly=cloud_cover,cloudcover,precipitation,wind_speed_10m,wind_gusts_10m&timezone=Asia%2FSeoul&start_date=${dateStrDash}&end_date=${dateStrDash}`;
+            const tideUrl_KHOA = `http://www.khoa.go.kr/api/oceangrid/tideObsPre/search.do?ServiceKey=${KHOA_API_KEY}&ObsCode=${locObj.obs}&Date=${dateStr}&ResultType=json`;
+            const recentUrl_KHOA = `http://www.khoa.go.kr/api/oceangrid/tideObs/search.do?ServiceKey=${KHOA_API_KEY}&ObsCode=${locObj.obs}&Date=${dateStr}&ResultType=json`;
+            const tempUrl_KHOA = `http://www.khoa.go.kr/api/oceangrid/tideObsTemp/search.do?ServiceKey=${KHOA_API_KEY}&ObsCode=${locObj.obs}&Date=${dateStr}&ResultType=json`;
             const fetchWeather = async () => {
                 try { const res = await fetchWithTimeout(weatherUrl, isDeep ? 10000 : 3000); if (res.ok) return await res.json(); } catch(e) {} return null;
             };
-            const [weatherData, recentData, tideData] = await Promise.all([fetchWeather(), fetchMarineData(recentUrl_KHOA, isDeep), fetchMarineData(tideUrl_KHOA, isDeep)]);
+            const [weatherData, recentData, tideData, tempData, romsData, fishingData] = await Promise.all([
+                fetchWeather(),
+                fetchMarineData(recentUrl_KHOA, isDeep),
+                fetchMarineData(tideUrl_KHOA, isDeep),
+                fetchMarineData(tempUrl_KHOA, isDeep),
+                fetchRomsData(locObj, targetDate, isDeep),
+                fetchFishingData(locObj, targetDate, isDeep)
+            ]);
             if (weatherData && weatherData.hourly && weatherData.hourly.precipitation) {
-                const rain = weatherData.hourly.precipitation[21]; const cloud = weatherData.hourly.cloudcover[21];
-                if (rain > 0.5) document.getElementById('weather').value = 'rain';
-                else if (cloud > 40) document.getElementById('weather').value = 'cloudy';
+                const idx = getNightIndex(weatherData.hourly, 21);
+                const clouds = weatherData.hourly.cloud_cover || weatherData.hourly.cloudcover || [];
+                const rain = parseFloat(weatherData.hourly.precipitation[idx] || 0);
+                const cloud = parseFloat(clouds[idx] || 0);
+                const wind = parseFloat((weatherData.hourly.wind_speed_10m || [])[idx] || 0);
+                const gust = parseFloat((weatherData.hourly.wind_gusts_10m || [])[idx] || wind);
+                envDataStatus.weather = true;
+                envDataStatus.windKmh = Math.max(wind, gust * 0.85);
+                envDataStatus.cloudCover = cloud;
+                envDataStatus.rainMm = rain;
+                if (rain > 0.2) document.getElementById('weather').value = 'rain';
+                else if (cloud > 55) document.getElementById('weather').value = 'cloudy';
                 else document.getElementById('weather').value = 'clear';
+                if (envDataStatus.windKmh >= 20) document.getElementById('wind').value = 'windy';
+                else if (envDataStatus.windKmh >= 12) document.getElementById('wind').value = 'breezy';
+                else document.getElementById('wind').value = 'calm';
                 isWeatherFound = true;
             }
-            const readNumericField = (row, keys) => {
-                if (!row) return null;
-                for (const key of keys) {
-                    if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
-                        const value = parseFloat(row[key]);
-                        if (!Number.isNaN(value)) return value;
-                    }
-                }
-                return null;
-            };
-            const readLatestNumeric = (data, keys) => {
-                if (Array.isArray(data)) {
-                    for (let i = data.length - 1; i >= 0; i--) {
-                        const value = readNumericField(data[i], keys);
-                        if (value !== null) return value;
-                    }
-                    return null;
-                }
-                return readNumericField(data, keys);
-            };
-
             let realTemp = null;
-            let realSalinity = null;
-            if (recentData && recentData.result && recentData.result.data) {
-                const d = recentData.result.data;
-                realTemp = readLatestNumeric(d, ['water_temp', 'w_temp', 'temp', 'Temp', 'TEMP']);
-                realSalinity = readLatestNumeric(d, ['salinity', 'salt', 'Salt', 'SALINITY', 'salinity_psu', 'psu']);
+            let tempSource = '';
+            if (romsData) {
+                realTemp = romsData.temp;
+                tempSource = 'roms';
+                envDataStatus.roms = true;
+                envDataStatus.currentSpeed = Number.isFinite(romsData.current) ? romsData.current : null;
+            } else {
+                const tempSources = [tempData, recentData];
+                for (const source of tempSources) {
+                    if (!source || !source.result || !source.result.data) continue;
+                    const d = source.result.data;
+                    if (Array.isArray(d)) {
+                        for (let i = d.length - 1; i >= 0; i--) {
+                            if (d[i].water_temp && !Number.isNaN(parseFloat(d[i].water_temp))) {
+                                realTemp = parseFloat(d[i].water_temp);
+                                tempSource = 'observed';
+                                break;
+                            }
+                        }
+                    } else if (d.water_temp && !Number.isNaN(parseFloat(d.water_temp))) {
+                        realTemp = parseFloat(d.water_temp);
+                        tempSource = 'observed';
+                    }
+                    if (realTemp !== null) break;
+                }
             }
-            if (realTemp !== null) { document.getElementById('temp').value = Math.round(realTemp); document.getElementById('tempValue').textContent = Math.round(realTemp); isKHOADataFound = true; }
-            else { const estimatedTemp = estimateWaterTemp(targetDate.getMonth() + 1); document.getElementById('temp').value = Math.round(estimatedTemp); document.getElementById('tempValue').textContent = Math.round(estimatedTemp); }
-            if (realSalinity !== null) { document.getElementById('salinity').value = Math.round(realSalinity); document.getElementById('salinityValue').textContent = Math.round(realSalinity); isKHOADataFound = true; }
+            if (realTemp === null && fishingData) {
+                const minWtem = parseFloat(fishingData.minWtem);
+                const maxWtem = parseFloat(fishingData.maxWtem);
+                if (Number.isFinite(minWtem) && Number.isFinite(maxWtem)) {
+                    realTemp = (minWtem + maxWtem) / 2;
+                    tempSource = 'fishing';
+                }
+            }
+            const tempSourceText = document.getElementById('tempSourceText');
+            if (realTemp !== null) {
+                document.getElementById('temp').value = Math.round(realTemp);
+                document.getElementById('tempValue').textContent = Math.round(realTemp);
+                envDataStatus.waterTemp = true;
+                envDataStatus.tempSource = tempSource;
+                if (tempSource === 'roms') {
+                    const predTimeText = romsData.predTime && !Number.isNaN(romsData.predTime.getTime())
+                        ? ` (${String(romsData.predTime.getMonth() + 1).padStart(2, '0')}/${String(romsData.predTime.getDate()).padStart(2, '0')} ${String(romsData.predTime.getHours()).padStart(2, '0')}시 예측)`
+                        : '';
+                    const currentText = envDataStatus.currentSpeed !== null ? `, 유속 ${envDataStatus.currentSpeed.toFixed(2)}` : '';
+                    tempSourceText.innerText = `* ROMS 예측 수온 사용: ${realTemp.toFixed(1)}℃${predTimeText}${currentText}`;
+                } else if (tempSource === 'fishing') {
+                    tempSourceText.innerText = `* 바다낚시지수 수온 범위 사용: ${realTemp.toFixed(1)}℃`;
+                } else {
+                    tempSourceText.innerText = `* KHOA 관측 수온 사용: ${realTemp.toFixed(1)}℃`;
+                }
+                tempSourceText.className = "text-[10px] text-emerald-400 mt-1";
+                isKHOADataFound = true;
+            } else {
+                const estimatedTemp = estimateWaterTemp(targetDate.getMonth() + 1);
+                document.getElementById('temp').value = estimatedTemp;
+                document.getElementById('tempValue').textContent = estimatedTemp;
+                tempSourceText.innerText = `* ROMS/관측 수온 미수신: 서해 계절 추정값 ${estimatedTemp}℃ 적용`;
+                tempSourceText.className = "text-[10px] text-amber-400 mt-1";
+            }
             let tideHtml = '';
             if (tideData && tideData.result && tideData.result.data && Array.isArray(tideData.result.data)) {
                 const highTides = tideData.result.data.filter(t => t.hl_code === '고조' || t.hl_code === 'H');
                 if (highTides.length > 0) {
+                    let hasGoldenTide = false;
                     highTides.forEach((t, i) => {
                         const tDate = new Date(t.tph_time.replace(' ', 'T'));
                         let h = tDate.getHours(); const m = tDate.getMinutes(); const ampm = h >= 12 ? '오후' : '오전'; h = h % 12 || 12;
-                        const isMain = (tDate.getHours() >= 17 || tDate.getHours() <= 3);
-                        tideHtml += `<div class="${isMain ? 'text-white font-bold' : 'text-slate-400'}">${ampm} ${h}시 ${m < 10 ? '0'+m : m}분 ${isMain ? '✨' : ''}</div>`;
+                        const isMain = isGoldenHighTide(tDate);
+                        if (isMain) hasGoldenTide = true;
+                        tideHtml += `<div class="${isMain ? 'text-white font-bold' : 'text-slate-400'}">${ampm} ${h}시 ${m < 10 ? '0'+m : m}분 ${isMain ? '골든타임' : ''}</div>`;
                     });
-                    document.getElementById('tide').value = 'rising'; isKHOADataFound = true;
+                    document.getElementById('tide').value = hasGoldenTide ? 'golden' : 'off';
+                    envDataStatus.tide = true;
+                    envDataStatus.tideSource = 'observed';
+                    isKHOADataFound = true;
                 }
             }
             if (tideHtml === '') {
                 const ests = getEstimatedTideTimes(targetDate);
                 ests.forEach((e, i) => {
                     const ampm = e.h >= 12 ? '오후' : '오전'; const displayH = e.h % 12 || 12;
-                    tideHtml += `<div class="text-slate-300 font-medium">${ampm} ${displayH}시 ${e.m < 10 ? '0'+e.m : e.m}분 <span class="text-[9px] text-sky-500/60 ml-1">(예측)</span></div>`;
+                    const tDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), e.h, e.m);
+                    const isMain = isGoldenHighTide(tDate);
+                    tideHtml += `<div class="${isMain ? 'text-slate-100 font-bold' : 'text-slate-300 font-medium'}">${ampm} ${displayH}시 ${e.m < 10 ? '0'+e.m : e.m}분 <span class="text-[9px] text-sky-500/60 ml-1">(추정${isMain ? ', 골든타임' : ''})</span></div>`;
                 });
-                document.getElementById('tide').value = 'rising';
+                document.getElementById('tide').value = classifyEstimatedTide(targetDate);
+            }
+            if (fishingData) {
+                const tideScore = parseFloat(fishingData.tdlvHrScr);
+                const waveMin = parseFloat(fishingData.minWvhgt);
+                const waveMax = parseFloat(fishingData.maxWvhgt);
+                const crspMin = parseFloat(fishingData.minCrsp);
+                const crspMax = parseFloat(fishingData.maxCrsp);
+                envDataStatus.fishing = true;
+                envDataStatus.fishingPlace = fishingData.seafsPstnNm || '';
+                envDataStatus.fishingTide = fishingData.tdlvHrCn || '';
+                envDataStatus.fishingTideScore = Number.isFinite(tideScore) ? tideScore : null;
+                envDataStatus.waveHeight = Number.isFinite(waveMin) && Number.isFinite(waveMax) ? (waveMin + waveMax) / 2 : null;
+                if (Number.isFinite(crspMin) && Number.isFinite(crspMax) && envDataStatus.currentSpeed === null) {
+                    envDataStatus.currentSpeed = (crspMin + crspMax) / 2;
+                }
+                const tideByFishing = classifyFishingTide(envDataStatus.fishingTideScore);
+                if (tideByFishing) {
+                    document.getElementById('tide').value = tideByFishing;
+                    envDataStatus.tide = true;
+                    envDataStatus.tideSource = 'fishing';
+                }
+                const scoreText = envDataStatus.fishingTideScore !== null ? ` / 물때점수 ${envDataStatus.fishingTideScore}` : '';
+                const waveText = envDataStatus.waveHeight !== null ? ` / 평균파고 ${envDataStatus.waveHeight.toFixed(1)}m` : '';
+                const placeText = envDataStatus.fishingPlace ? `[${envDataStatus.fishingPlace}] ` : '';
+                tideHtml = `<div class="text-emerald-300 font-bold">${placeText}바다낚시지수 물때: ${envDataStatus.fishingTide || '정보 있음'}${scoreText}${waveText}</div>` + tideHtml;
+                isKHOADataFound = true;
             }
             tideInfoText.innerHTML = tideHtml;
             isUsingRealtimeData = (isKHOADataFound || isWeatherFound);
-            if (isUsingRealtimeData) { badge.classList.remove('hidden'); badge.innerHTML = '📡 KHOA/기상청 연동됨'; badge.classList.replace('bg-amber-500', 'bg-emerald-500'); }
-            else { badge.classList.remove('hidden'); badge.innerHTML = '⚡ 예측 알고리즘 모드'; badge.classList.replace('bg-emerald-500', 'bg-amber-500'); }
+            if (envDataStatus.weather && envDataStatus.fishing && envDataStatus.roms) {
+                badge.classList.remove('hidden'); badge.innerHTML = '📡 낚시지수/ROMS/기상 연동'; badge.classList.replace('bg-amber-500', 'bg-emerald-500');
+            } else if (envDataStatus.weather && envDataStatus.roms && envDataStatus.tide) {
+                badge.classList.remove('hidden'); badge.innerHTML = '📡 ROMS/기상/물때 연동'; badge.classList.replace('bg-amber-500', 'bg-emerald-500');
+            } else if (envDataStatus.weather && envDataStatus.fishing) {
+                badge.classList.remove('hidden'); badge.innerHTML = '📡 낚시지수/기상 연동'; badge.classList.replace('bg-amber-500', 'bg-emerald-500');
+            } else if (envDataStatus.weather && envDataStatus.waterTemp && envDataStatus.tide) {
+                badge.classList.remove('hidden'); badge.innerHTML = '📡 기상/수온/물때 연동'; badge.classList.replace('bg-amber-500', 'bg-emerald-500');
+            } else if (isUsingRealtimeData) {
+                badge.classList.remove('hidden'); badge.innerHTML = '📡 부분 연동 + 보수 추정'; badge.classList.replace('bg-amber-500', 'bg-emerald-500');
+            } else {
+                badge.classList.remove('hidden'); badge.innerHTML = '⚡ 보수 추정 모드'; badge.classList.replace('bg-emerald-500', 'bg-amber-500');
+            }
             calculate(true); 
             setTimeout(() => { btn.innerHTML = originalBtnText; btn.disabled = false; btn.classList.remove('opacity-50'); if(deepBtn) { deepBtn.innerHTML = originalDeepBtnText; deepBtn.disabled = false; deepBtn.classList.remove('opacity-50'); } }, 800);
         }
 
         function calculate(isAuto = false) {
-            let score = 0;
+            let score = 8;
             const locSelect = document.getElementById('location');
             lastCalculatedLocation = locSelect.selectedOptions[0].text;
             const temp = parseFloat(document.getElementById('temp').value);
-            const salinity = parseFloat(document.getElementById('salinity').value || '28');
-            const tempProfile = getWaterTempProfile(temp);
-            const salinityProfile = getSalinityProfile(salinity);
             const moon = document.getElementById('moon').value;
             const weather = document.getElementById('weather').value;
+            const wind = document.getElementById('wind').value;
             const tide = document.getElementById('tide').value;
             const redTide = document.getElementById('redTide').value;
             const targetDateInput = document.getElementById('targetDate').value;
             const targetDate = targetDateInput ? new Date(targetDateInput) : new Date();
             const month = targetDate.getMonth() + 1;
+            let caps = [92];
+            let reasons = [];
 
-            if (locSelect.value !== 'general') score += 10;
-            const monthlyTemp = estimateMonthlyWaterTemp(month);
-            if (monthlyTemp >= 15 && monthlyTemp <= 22) score += 15;
-            else if (monthlyTemp >= 4 && monthlyTemp < 27) score += 5;
-            else score -= 10;
+            if (locSelect.value !== 'general') score += 6;
+            if (month >= 6 && month <= 8) score += 14;
+            else if (month === 5 || month === 9) score += 8;
+            else { score -= 12; caps.push(35); reasons.push('시기'); }
 
-            let moonScore = 0;
-            if (moon === 'new') moonScore = 30; else if (moon === 'half') moonScore = 15;
-            if (weather === 'rain') score -= 40; else if (weather === 'cloudy' && (moon === 'full' || moon === 'half')) moonScore += 10;
-            score += moonScore;
+            if (moon === 'new') score += 16;
+            else if (moon === 'half') score += 7;
+            else { score -= 10; caps.push(58); reasons.push('달빛'); }
 
-            if (tide === 'rising') score += 10;
-            if (redTide === 'yes') score += 10;
+            if (weather === 'rain') { score -= 35; caps.push(22); reasons.push('강수'); }
+            else if (weather === 'cloudy') score += 3;
+            else score += 7;
 
-            score += tempProfile.bonus;
-            score += salinityProfile.bonus;
+            if (wind === 'calm') score += 14;
+            else if (wind === 'breezy') { score += 5; caps.push(72); }
+            else { score -= 22; caps.push(48); reasons.push('바람'); }
 
+            if (tide === 'golden') score += 18;
+            else if (tide === 'rising') score += 8;
+            else if (tide === 'off') { score -= 10; caps.push(55); reasons.push('물때'); }
+            else { score -= 18; caps.push(42); reasons.push('썰물'); }
+
+            if (redTide === 'yes') score += 18;
+            else if (redTide === 'unknown') { caps.push(68); reasons.push('표층 징후 미확인'); }
+            else { score -= 12; caps.push(45); reasons.push('표층 징후 없음'); }
+
+            let tempBonus = 0;
+            if (temp >= 20 && temp <= 25) { tempBonus = 18; }
+            else if (temp >= 18 && temp < 20) { tempBonus = 4; caps.push(52); reasons.push('낮은 수온'); }
+            else if (temp >= 16 && temp < 18) { score -= 18; caps.push(32); reasons.push('낮은 수온'); }
+            else if (temp < 16) { score -= 35; caps.push(18); reasons.push('매우 낮은 수온'); }
+            else if (temp > 25 && temp <= 28) { tempBonus = 8; caps.push(76); }
+            else { score -= 25; caps.push(38); reasons.push('수온'); }
+            score += tempBonus;
+
+            if (!envDataStatus.waterTemp) { score -= 8; caps.push(62); reasons.push('관측 수온 미수신'); }
+            if (!envDataStatus.tide) caps.push(74);
+            if (envDataStatus.weather && envDataStatus.windKmh !== null && envDataStatus.windKmh >= 20) caps.push(48);
+            if (envDataStatus.fishingTideScore !== null && envDataStatus.fishingTideScore < 45) {
+                score -= 10;
+                caps.push(48);
+                reasons.push('낚시지수 물때 낮음');
+            }
+            if (envDataStatus.waveHeight !== null && envDataStatus.waveHeight >= 1.0) {
+                score -= 10;
+                caps.push(52);
+                reasons.push('파고');
+            }
+            if (envDataStatus.currentSpeed !== null && envDataStatus.currentSpeed >= 0.7) {
+                score -= 8;
+                caps.push(56);
+                reasons.push('유속');
+            }
+
+            score = Math.min(score, ...caps);
             if (score > 100) score = 100; if (score < 0) score = 0;
+            score = Math.round(score);
             lastCalculatedScore = score;
             animateValue("percentage", parseInt(document.getElementById('percentage').innerText), score, 800);
             
@@ -630,36 +945,45 @@
             const resultMessage = document.getElementById('resultMessage');
             const resultModeBadge = document.getElementById('resultModeBadge');
             
-            if (isUsingRealtimeData) {
-                resultModeBadge.innerHTML = "📡 실시간 데이터 분석 완료";
+            if (envDataStatus.weather && envDataStatus.fishing && envDataStatus.roms) {
+                resultModeBadge.innerHTML = "📡 낚시지수 + ROMS 분석";
                 resultModeBadge.className = "inline-block px-2 py-0.5 rounded-full text-[9px] font-bold mb-1 border uppercase tracking-tight text-emerald-400 border-emerald-500/50 bg-emerald-950/30";
+            } else if (envDataStatus.weather && envDataStatus.fishing) {
+                resultModeBadge.innerHTML = "📡 낚시지수 + 기상 분석";
+                resultModeBadge.className = "inline-block px-2 py-0.5 rounded-full text-[9px] font-bold mb-1 border uppercase tracking-tight text-emerald-400 border-emerald-500/50 bg-emerald-950/30";
+            } else if (envDataStatus.weather && envDataStatus.roms && envDataStatus.tide) {
+                resultModeBadge.innerHTML = "📡 ROMS 예측 분석";
+                resultModeBadge.className = "inline-block px-2 py-0.5 rounded-full text-[9px] font-bold mb-1 border uppercase tracking-tight text-emerald-400 border-emerald-500/50 bg-emerald-950/30";
+            } else if (envDataStatus.weather && envDataStatus.waterTemp && envDataStatus.tide) {
+                resultModeBadge.innerHTML = "📡 관측 데이터 분석";
+                resultModeBadge.className = "inline-block px-2 py-0.5 rounded-full text-[9px] font-bold mb-1 border uppercase tracking-tight text-emerald-400 border-emerald-500/50 bg-emerald-950/30";
+            } else if (isUsingRealtimeData) {
+                resultModeBadge.innerHTML = "📡 부분 연동 + 보수 추정";
+                resultModeBadge.className = "inline-block px-2 py-0.5 rounded-full text-[9px] font-bold mb-1 border uppercase tracking-tight text-sky-300 border-sky-500/50 bg-sky-950/30";
             } else {
-                resultModeBadge.innerHTML = "⚡ 예측 알고리즘 분석 모드";
+                resultModeBadge.innerHTML = "⚡ 보수 추정 모드";
                 resultModeBadge.className = "inline-block px-2 py-0.5 rounded-full text-[9px] font-bold mb-1 border uppercase tracking-tight text-amber-400 border-amber-500/50 bg-amber-950/30";
             }
             
             resultArea.classList.remove('hidden');
 
             setTimeout(() => {
-                const envSummary = `<br><span class='text-xs font-normal text-slate-400'>수온: ${temp}℃ · ${tempProfile.label}<br>염분: ${salinity} psu · ${salinityProfile.label}</span>`;
                 if (weather === 'rain') {
-                    resultMessage.innerHTML = `🌧️ 비가 오거나 바람이 강하면 관측이 불가능에 가깝습니다.${envSummary}`;
+                    resultMessage.innerHTML = `🌧️ 비가 있으면 관측 가능성을 낮게 봅니다.<br><span class='text-sm font-normal text-slate-400'>야광충이 있더라도 빛 반응과 현장 시야가 크게 떨어질 수 있습니다.</span>`;
                     resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
-                } else if (tempProfile.key === 'lethal_hot' || salinityProfile.key === 'lethal_low') {
-                    resultMessage.innerHTML = `⚠️ 개체수 급감 조건입니다.<br><span class='text-sm font-normal text-slate-400'>${tempProfile.key === 'lethal_hot' ? tempProfile.detail : salinityProfile.detail}</span>${envSummary}`;
-                    resultMessage.className = "text-base font-medium text-amber-300 mt-3 leading-relaxed";
-                } else if (tempProfile.key === 'too_cold') {
-                    resultMessage.innerHTML = `🥶 수온이 너무 낮습니다. (${temp}℃)<br><span class='text-sm font-normal text-slate-400'>4℃ 미만은 관측 가능성을 매우 낮게 봅니다.</span>${envSummary}`;
-                    resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
-                } else if (score >= 80) {
-                    resultMessage.innerHTML = `✨ 확률이 매우 높습니다!<br><span class='text-sm font-normal text-sky-200'>수온과 염분 조건이 좋고, 달빛·물때 조건도 우수합니다.</span>${envSummary}`;
-                    resultMessage.className = "text-base font-medium text-sky-300 mt-3 leading-relaxed";
-                } else if (score >= 55) {
-                    resultMessage.innerHTML = `🌟 관측하기 좋은 조건입니다.<br><span class='text-sm font-normal text-blue-200'>완벽한 피크는 아니어도 어두운 해변이라면 충분히 시도할 만합니다.</span>${envSummary}`;
-                    resultMessage.className = "text-base font-medium text-blue-300 mt-3 leading-relaxed";
+                } else if (wind === 'windy') {
+                    resultMessage.innerHTML = `💨 바람이 강한 조건입니다.<br><span class='text-sm font-normal text-slate-400'>표층 군집이 흩어지고 파문 때문에 발광을 보기 어렵습니다.</span>`;
+                } else if (temp < 19) {
+                    resultMessage.innerHTML = `🥶 수온이 너무 낮습니다. (${temp}℃)<br><span class='text-sm font-normal text-slate-400'>야광충이 생존은 가능하나 빛을 내며 번식하기엔 차갑습니다. 20℃ 이상인 날을 기다려보세요.</span>`;
+                } else if (score >= 75) {
+                    resultMessage.innerHTML = `✨ 조건이 많이 맞습니다.<br><span class='text-sm font-normal text-sky-200'>다만 실제 낮 표층 징후와 잔잔한 수면까지 확인될 때만 높게 판단합니다.</span>`;
+                } else if (score >= 50) {
+                    resultMessage.innerHTML = `🌟 시도해볼 만하지만 보수적으로 봐야 합니다.<br><span class='text-sm font-normal text-blue-200'>수온, 바람, 만조 시간 중 하나만 어긋나도 현장에서는 안 보일 수 있습니다.</span>`;
                 } else {
-                    resultMessage.innerHTML = `야광충을 만나기 어려운 조건입니다.<br><span class='text-sm font-normal text-slate-400'>수온 15~22℃, 염분 12 psu 초과, 그믐달과 만조 전후를 우선하세요.</span>${envSummary}`;
-                    resultMessage.className = "text-base font-medium text-slate-400 mt-3 leading-relaxed";
+                    resultMessage.innerHTML = `야광충을 만나기 어려운 조건입니다.<br><span class='text-sm font-normal text-slate-400'>늦봄~여름철, 수온 20℃ 이상의 그믐달 시기가 최적입니다.</span>`;
+                }
+                if (reasons.length > 0) {
+                    resultMessage.innerHTML += `<br><span class='block mt-2 text-[12px] text-amber-300/90'>보수 차감: ${[...new Set(reasons)].slice(0, 4).join(', ')}</span>`;
                 }
                 updateMiniRecommendations(targetDate);
                 if (!isAuto) resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -691,7 +1015,7 @@
             for (let i = 1; i <= 100; i++) {
                 let checkDate = new Date(now); checkDate.setDate(now.getDate() + i);
                 const month = checkDate.getMonth() + 1; const moonData = getLunarData(checkDate);
-                if (isEstimatedActiveMonth(month) && (moonData.val === 'new')) { recommended.push({ date: new Date(checkDate), moon: moonData.icon, estTemp: estimateMonthlyWaterTemp(month) }); }
+                if ((month >= 5 && month <= 8) && (moonData.val === 'new')) { recommended.push({ date: new Date(checkDate), moon: moonData.icon }); }
             }
             if (recommended.length === 0) { container.innerHTML = `<div class="text-center p-6 text-slate-400 text-sm bg-slate-800/50 rounded-lg">조건이 맞는 최적 관측일이 없습니다.</div>`; return; }
             let html = ''; const days = ['일', '월', '화', '수', '목', '금', '토'];
@@ -707,7 +1031,7 @@
                             <div class="text-lg font-bold ${isLongTerm ? 'text-slate-300' : 'text-sky-300'}">${m}월 ${d}일 <span class="text-xs font-normal ${isWeekend ? 'text-pink-400' : 'text-slate-400'}">(${dayName})</span></div>
                             ${isLongTerm ? '<span class="bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded-full text-[9px] border border-slate-600 font-bold uppercase">장기</span>' : '<span class="bg-emerald-900/60 text-emerald-400 px-2 py-0.5 rounded-full text-[9px] border border-emerald-500/50 font-bold uppercase">정밀</span>'}
                         </div>
-                        <div class="flex items-center text-[11px] ${isLongTerm ? 'text-slate-500' : 'text-slate-400'} mt-1">${item.moon} 그믐달 | 🌡️ 예상 ${item.estTemp}℃ 활성권</div>
+                        <div class="flex items-center text-[11px] ${isLongTerm ? 'text-slate-500' : 'text-slate-400'} mt-1">${item.moon} 그믐달 | 🌡️ 수온 활성기</div>
                     </div>
                     <button onclick="setTargetDate('${item.date.getFullYear()}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}')" class="ml-2 text-xs ${isLongTerm ? 'bg-slate-700 text-slate-300' : 'bg-sky-600/20 text-sky-300 hover:bg-sky-500 hover:text-white'} px-3 py-2 rounded-lg transition font-bold shrink-0">선택</button>
                 </div>`;
@@ -723,12 +1047,11 @@
             for (let i = 1; i <= 100; i++) { 
                 let checkDate = new Date(baseDate); checkDate.setDate(baseDate.getDate() + i);
                 const m = checkDate.getMonth() + 1; const moonData = getLunarData(checkDate);
-                if (isEstimatedActiveMonth(m) && (moonData.val === 'new')) {
-                    const estTemp = estimateMonthlyWaterTemp(m);
+                if ((m >= 5 && m <= 8) && (moonData.val === 'new')) {
                     const isLongTerm = Math.ceil((checkDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) > 7;
                     html += `<div class="bg-slate-700/50 p-2.5 rounded border ${isLongTerm ? 'border-slate-600 border-dashed opacity-80' : 'border-sky-700/60'} text-xs text-slate-200 flex justify-between items-center cursor-pointer hover:bg-slate-600 transition" onclick="setTargetDate('${checkDate.getFullYear()}-${String(m).padStart(2,'0')}-${String(checkDate.getDate()).padStart(2,'0')}')">
                         <div class="flex items-center gap-2"><span class="font-medium">${m}/${checkDate.getDate()} (${days[checkDate.getDay()]})</span><span class="text-[9px] ${isLongTerm ? 'text-slate-400' : 'text-emerald-400 font-bold'}">${isLongTerm ? '장기' : '정밀'}</span></div>
-                        <span class="text-sky-300 font-bold">${moonData.icon} ${estTemp}℃</span>
+                        <span class="text-sky-300 font-bold">${moonData.icon}</span>
                     </div>`;
                     count++;
                 }
@@ -739,10 +1062,10 @@
 
         function saveDiary() {
             const dateStr = document.getElementById('targetDate').value || new Date().toISOString().split('T')[0];
-            const locName = lastCalculatedLocation === "지역 무관 (일반 서해안)" ? "서해안 어느 바다" : lastCalculatedLocation;
+            const locName = lastCalculatedLocation === "지역 무관 (일반 해안)" ? "서해안 어느 바다" : lastCalculatedLocation;
             let diary = JSON.parse(localStorage.getItem('seaSparkleDiary') || '[]');
             diary = diary.filter(r => !(r.date === dateStr && r.location === locName));
-            diary.unshift({ id: Date.now(), date: dateStr, location: locName, score: lastCalculatedScore, temp: document.getElementById('temp').value, salinity: document.getElementById('salinity').value });
+            diary.unshift({ id: Date.now(), date: dateStr, location: locName, score: lastCalculatedScore });
             localStorage.setItem('seaSparkleDiary', JSON.stringify(diary));
             showToast("📝 일지에 기록이 저장되었습니다!"); renderDiary();
         }
@@ -758,7 +1081,6 @@
                     <div class="text-[10px] text-slate-400">${record.date}</div>
                     <div class="text-lg font-bold text-white mb-2">${record.location}</div>
                     <div class="inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-bold ${badgeColor}">확률: ${record.score}%</div>
-                    ${record.temp ? `<div class="text-[10px] text-slate-400 mt-2">수온 ${record.temp}℃ · 염분 ${record.salinity || '-'} psu</div>` : ''}
                 </div>`;
             });
             container.innerHTML = html;
@@ -772,10 +1094,10 @@
         function clearDiary() { if(confirm("모든 일지를 삭제하시겠습니까?")) { localStorage.removeItem('seaSparkleDiary'); renderDiary(); } }
 
         function shareResult() {
-            const locText = lastCalculatedLocation === "지역 무관 (일반 서해안)" ? "서해안" : lastCalculatedLocation;
+            const locText = lastCalculatedLocation === "지역 무관 (일반 해안)" ? "서해안" : lastCalculatedLocation;
             const dateVal = document.getElementById('targetDate').value;
             const tideTime = document.getElementById('tideInfoText').innerText.replace(/\n/g, ' / ');
-            let shareText = `🌊 [${dateVal}] 야광충 관측 가이드\n📍 장소: ${locText}\n✨ 확률: ${lastCalculatedScore}%\n🌡️ 수온: ${document.getElementById('temp').value}℃ / 🧂 염분: ${document.getElementById('salinity').value} psu\n⏰ 만조시간: ${tideTime}\n- 야광충 예측 Pro -`;
+            let shareText = `🌊 [${dateVal}] 야광충 관측 가이드\n📍 장소: ${locText}\n✨ 확률: ${lastCalculatedScore}%\n⏰ 만조시간: ${tideTime}\n- 야광충 예측 Pro -`;
             const textArea = document.createElement("textarea"); textArea.value = shareText; document.body.appendChild(textArea); textArea.select();
             try { document.execCommand('copy'); showToast("🔗 결과가 복사되었습니다!"); } catch (err) { console.error('복사 실패', err); }
             document.body.removeChild(textArea);
